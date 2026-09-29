@@ -25,20 +25,25 @@ Node.js 22.13 이상과 pnpm이 필요하다.
 
 ```sh
 pnpm install
-pnpm dev      # http://localhost:5173
+pnpm dev          # http://localhost:5173
 pnpm build
+pnpm start        # 빌드 결과를 로컬 wrangler로 실행 (http://127.0.0.1:8799)
+pnpm typecheck
+pnpm lint
 ```
 
-- 서버 비밀값(API 키)은 `.env*` 파일에 두고 커밋하지 않는다. `.gitignore`가 `.env*`를 제외한다.
+- 서버 비밀값(API 키)은 `.env.local`에 두고 커밋하지 않는다. `.gitignore`가 `.env*`를 제외한다. 로컬 wrangler는 `.dev.vars`가 없으면 `.env`와 `.env.local`을 읽는다.
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
+- 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
 
 ## 구조
 
 | 경로 | 내용 |
 |---|---|
+| `worker/index.ts` | 워커 진입점 |
+| `wrangler.jsonc` | 워커 이름·계정·진입점 설정 |
 | `app/page.tsx` | 메인 화면 |
 | `app/api/weather` | Open-Meteo 기상 조회 |
-| `build/`, `scripts/`, `.openai/` | Sites 빌드·실행 환경용 파일 (제거 예정) |
 
 ## 외부 데이터 이용 시 주의
 

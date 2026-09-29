@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fuji-now",
+  "account_id": "1dafd4cb9889ab12c13852360fadf60f",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"]
+}
