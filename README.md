@@ -11,14 +11,13 @@
 - 지금 코드에 있는 기능
   - 가와구치코 좌표의 현재 기상과 앞으로의 운량 (Open-Meteo)
   - 카메라 운영 사이트로 가는 원본 링크
-  - 사진을 올리면 Gemini로 가시성을 판정하는 기능과 판정 기록(D1). 서버에 `GEMINI_API_KEY`가 없으면 비활성 상태다.
 
 ## 진행 중인 방향
 
 - 배포를 내 Cloudflare Workers(workers.dev)로 옮기고, Sites 전용 코드를 걷어낸다.
 - 후지 5호별 YouTube 라이브 카메라와 호수별 기상(기상청 MSM 모델, Open-Meteo 제공)을 보여준다.
 - 라이브가 끝나거나 재시작된 경우를 가려내기 위해, 서버가 YouTube Data API로 방송 여부를 주기적으로 확인한다.
-- 사진 AI 판정과 D1은 제거한다. 카메라 영상 분석은 제공자의 허가를 받은 뒤에 다시 검토한다.
+- 카메라 영상 AI 분석은 제공자의 허가를 받은 뒤에 다시 검토한다.
 
 ## 로컬 실행
 
@@ -39,8 +38,6 @@ pnpm build
 |---|---|
 | `app/page.tsx` | 메인 화면 |
 | `app/api/weather` | Open-Meteo 기상 조회 |
-| `app/api/analyze`, `app/api/observations` | 사진 AI 판정과 기록 (제거 예정) |
-| `db/`, `drizzle/` | D1 스키마와 마이그레이션 (제거 예정) |
 | `build/`, `scripts/`, `.openai/` | Sites 빌드·실행 환경용 파일 (제거 예정) |
 
 ## 외부 데이터 이용 시 주의
