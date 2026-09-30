@@ -5,7 +5,11 @@ export function SiteFooter() {
     <footer className="site-footer">
       <p>
         기상: 기상청 MSM 모델, <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> 제공
-        (CC BY 4.0). 수치는 관측값이 아닌 예보 모델 값입니다.
+        (CC BY 4.0). 관측 강수 외의 수치는 관측값이 아닌 예보 모델 값입니다.
+      </p>
+      <p>
+        관측 강수: 기상청 AMeDAS.{" "}
+        <a href="https://www.jma.go.jp/bosai/amedas/" target="_blank" rel="noopener noreferrer">出典：気象庁ホームページ</a>
       </p>
       <p>카메라 영상의 저작권은 각 채널에 있습니다. 이 사이트는 YouTube API Services를 사용합니다.</p>
       <p>

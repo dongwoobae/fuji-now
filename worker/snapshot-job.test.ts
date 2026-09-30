@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import amedasFixture from "../lib/__fixtures__/amedas-points.json";
 import weatherFixture from "../lib/__fixtures__/open-meteo-msm.json";
 import { LAKES } from "../lib/lakes";
 import { SNAPSHOT_KEY, type Snapshot } from "../lib/snapshot/schema";
@@ -31,11 +32,17 @@ const youtubeBody = {
   })),
 };
 
-function stubFetch(handlers: { youtube: () => Response; weather: () => Response }) {
+const amedasOk = (url: URL) => {
+  if (url.pathname.endsWith("/latest_time.txt")) return new Response(amedasFixture.latestTime);
+  return Response.json(amedasFixture.points[url.pathname.split("/")[5] as keyof typeof amedasFixture.points]);
+};
+
+function stubFetch(handlers: { youtube: () => Response; weather: () => Response; amedas?: (url: URL) => Response }) {
   vi.stubGlobal("fetch", vi.fn(async (input: URL | string) => {
     const url = new URL(String(input));
     if (url.hostname === "www.googleapis.com") return handlers.youtube();
     if (url.hostname === "api.open-meteo.com") return handlers.weather();
+    if (url.hostname === "www.jma.go.jp") return (handlers.amedas ?? amedasOk)(url);
     throw new Error(`unexpected fetch ${url.hostname}`);
   }));
 }
@@ -54,6 +61,8 @@ describe("runSnapshotJob", () => {
     expect(snapshot?.lakes.map((lake) => lake.id)).toEqual(LAKES.map((lake) => lake.id));
     expect(snapshot?.lakes.every((lake) => lake.weatherCheckedAt === NOW.toISOString())).toBe(true);
     expect(snapshot?.lakes.find((lake) => lake.id === "yamanakako")?.camera?.videoId).toBe("F2NbYrc-gBU");
+    expect(snapshot?.observations.map((o) => o.id).sort()).toEqual(["49251", "49256"]);
+    expect(snapshot?.observationsCheckedAt).toBe(NOW.toISOString());
   });
 
   it("still writes weather when the API key is missing", async () => {
@@ -64,8 +73,12 @@ describe("runSnapshotJob", () => {
     expect(lake).toMatchObject({ camera: null, cameraCheckedAt: null, weatherCheckedAt: NOW.toISOString() });
   });
 
-  it("does not write when both sources fail", async () => {
-    stubFetch({ youtube: () => new Response("quota", { status: 403 }), weather: () => new Response("down", { status: 503 }) });
+  it("does not write when every source fails", async () => {
+    stubFetch({
+      youtube: () => new Response("quota", { status: 403 }),
+      weather: () => new Response("down", { status: 503 }),
+      amedas: () => new Response("down", { status: 503 }),
+    });
     const { kv, stored } = fakeKv();
     await runSnapshotJob({ SNAPSHOT_KV: kv, YOUTUBE_API_KEY: API_KEY }, NOW);
     expect(stored()).toBeNull();

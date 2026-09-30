@@ -9,7 +9,7 @@
 - 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fujinow.dwoobae.com (Workers Custom Domain). workers.dev 주소는 끈다.
 - 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
 - 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다.
-- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상을 받아 KV 스냅샷 하나(`snapshot:v1`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
+- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v2`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 
 ## 로컬 실행
 
@@ -53,7 +53,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 |---|---|---|
 | 워커 `fuji-now` | main 병합(GitHub Actions) 또는 `pnpm run deploy` | `pnpm exec wrangler deployments list` |
 | 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
-| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v1 --binding SNAPSHOT_KV --remote` |
+| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v2 --binding SNAPSHOT_KV --remote` |
 | secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
 | GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
 | 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
@@ -75,7 +75,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
 | `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크) |
 | `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
-| `lib/youtube.ts`, `lib/weather.ts` | 외부 API 호출과 응답 검사 |
+| `lib/youtube.ts`, `lib/weather.ts`, `lib/amedas.ts` | 외부 API 호출과 응답 검사 |
 | `lib/view.ts` | 화면 표시 계산 |
 | `app/page.tsx`, `components/` | 화면 |
 | `app/privacy/page.tsx` | 개인정보처리방침 |
@@ -85,4 +85,5 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 - 카메라 영상과 이미지의 권리는 각 운영자에게 있다. YouTube 영상은 임베드 플레이어로만 보여주고, 허가 없이 프레임이나 이미지를 자동으로 수집하지 않는다.
 - Open-Meteo 데이터는 CC BY 4.0이라 출처를 표기해야 한다. 무료 API는 비상업용에만 쓸 수 있다.
+- 기상청 AMeDAS 관측은 공공데이터 이용규약에 따라 「出典：気象庁ホームページ」를 표기한다. 기상청 웹사이트가 쓰는 JSON이라 형식이 바뀔 수 있고, 그러면 관측 줄만 사라진다.
 - YouTube API Services 정책에 따라 API로 받은 데이터는 30일 안에 지우거나 새로 받는다. 스냅샷은 5분마다 새로 쓰고, 이어받는 값은 1시간을 넘기지 않으며, KV 만료는 1일이다. 테스트 데이터(`lib/__fixtures__/youtube-videos.json`)는 구조만 실제이고 내용 값은 바꿔 두었다.

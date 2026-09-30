@@ -78,7 +78,14 @@ export default async function Home() {
           </section>
           <div className="lake-grid">
             {LAKES.map((lake) => (
-              <LakeCard key={lake.id} lake={lake} data={byId.get(lake.id) ?? null} night={night} now={now} />
+              <LakeCard
+                key={lake.id}
+                lake={lake}
+                data={byId.get(lake.id) ?? null}
+                observation={snapshot.observations.find((o) => o.id === lake.station) ?? null}
+                night={night}
+                now={now}
+              />
             ))}
           </div>
         </>

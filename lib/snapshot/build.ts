@@ -1,7 +1,7 @@
 import { SUN_REFERENCE_LAKE, type Lake } from "../lakes";
 import type { WeatherResult } from "../weather";
 import { selectLakeCamera, type VideoItem } from "../youtube";
-import { CARRY_MAX_MS, type LakeSnapshot, type Snapshot } from "./schema";
+import { CARRY_MAX_MS, type LakeSnapshot, type Observation, type Snapshot } from "./schema";
 
 export type SourceResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -10,11 +10,12 @@ type BuildInput = {
   previous: Snapshot | null;
   videos: SourceResult<VideoItem[]>;
   weather: SourceResult<WeatherResult>;
+  observations: SourceResult<Observation[]>;
   now: Date;
 };
 
-export function buildSnapshot({ lakes, previous, videos, weather, now }: BuildInput): Snapshot | null {
-  if (!videos.ok && !weather.ok) return null;
+export function buildSnapshot({ lakes, previous, videos, weather, observations, now }: BuildInput): Snapshot | null {
+  if (!videos.ok && !weather.ok && !observations.ok) return null;
   const nowIso = now.toISOString();
   const carryable = (checkedAt: string | null): checkedAt is string =>
     checkedAt !== null && now.getTime() - Date.parse(checkedAt) <= CARRY_MAX_MS;
@@ -54,5 +55,14 @@ export function buildSnapshot({ lakes, previous, videos, weather, now }: BuildIn
         : { sunrise: null, sunset: null };
   }
 
-  return { writtenAt: nowIso, ...sun, lakes: lakeSnapshots };
+  let observed: Pick<Snapshot, "observations" | "observationsCheckedAt">;
+  if (observations.ok) {
+    observed = { observations: observations.value, observationsCheckedAt: nowIso };
+  } else if (previous && carryable(previous.observationsCheckedAt)) {
+    observed = { observations: previous.observations, observationsCheckedAt: previous.observationsCheckedAt };
+  } else {
+    observed = { observations: [], observationsCheckedAt: null };
+  }
+
+  return { writtenAt: nowIso, ...sun, lakes: lakeSnapshots, ...observed };
 }
