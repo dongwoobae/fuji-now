@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-- 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fuji-now.dongwoobae.workers.dev
+- 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fujinow.dwoobae.com (Workers Custom Domain). workers.dev 주소는 끈다.
 - 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
 - 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다.
 - 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상을 받아 KV 스냅샷 하나(`snapshot:v1`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
@@ -37,13 +37,33 @@ pnpm exec wrangler login   # 처음 한 번
 pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게 동작한다
 ```
 
+## 카메라 후보 바꾸기
+
+`lib/lakes.ts`의 `candidates`가 호수별 후보 영상 ID 목록이다. 앞에 있을수록 우선한다. 방송이 새 ID로 재시작되면 옛 ID는 `ended`나 `missing`이 되고, 그 호수는 "방송 없음"으로 보인다. 예약 작업 로그의 `notLive`에서 끊긴 후보를 확인할 수 있다. 새 ID를 목록에 넣고 다시 배포한다.
+
+## 운영 자원
+
+| 자원 | 만드는 방법 | 확인 |
+|---|---|---|
+| 워커 `fuji-now` | `pnpm run deploy` | `pnpm exec wrangler deployments list` |
+| 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
+| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v1 --binding SNAPSHOT_KV --remote` |
+| secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
+| 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
+
+`wrangler.jsonc`에서 바인딩을 지워도 실제 자원은 남는다. 사이트를 내릴 때는 아래 순서로 지운다.
+
+1. `pnpm exec wrangler delete fuji-now` — 워커와 예약 작업, secret이 함께 지워진다. 그 뒤 대시보드의 dwoobae.com DNS에 `fujinow` 레코드가 남았는지 확인한다.
+2. `pnpm exec wrangler kv namespace delete --binding SNAPSHOT_KV`
+3. Google Cloud 콘솔에서 fuji-now용 API 키를 폐기한다.
+
 ## 구조
 
 | 경로 | 내용 |
 |---|---|
 | `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
 | `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
-| `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업 설정 |
+| `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
 | `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크) |
 | `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
 | `lib/youtube.ts`, `lib/weather.ts` | 외부 API 호출과 응답 검사 |
@@ -56,3 +76,4 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 - 카메라 영상과 이미지의 권리는 각 운영자에게 있다. YouTube 영상은 임베드 플레이어로만 보여주고, 허가 없이 프레임이나 이미지를 자동으로 수집하지 않는다.
 - Open-Meteo 데이터는 CC BY 4.0이라 출처를 표기해야 한다. 무료 API는 비상업용에만 쓸 수 있다.
+- YouTube API Services 정책에 따라 API로 받은 데이터는 30일 안에 지우거나 새로 받는다. 스냅샷은 5분마다 새로 쓰고, 이어받는 값은 1시간을 넘기지 않으며, KV 만료는 1일이다. 테스트 데이터(`lib/__fixtures__/youtube-videos.json`)는 구조만 실제이고 내용 값은 바꿔 두었다.
