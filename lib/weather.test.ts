@@ -15,6 +15,7 @@ describe("buildWeatherUrl", () => {
     expect(url.searchParams.get("latitude")).toBe(LAKES.map((lake) => lake.latitude).join(","));
     expect(url.searchParams.get("longitude")).toBe(LAKES.map((lake) => lake.longitude).join(","));
     expect(url.searchParams.get("models")).toBe("jma_msm");
+    expect(url.searchParams.get("cell_selection")).toBe("nearest");
     expect(url.searchParams.get("wind_speed_unit")).toBe("ms");
     expect(url.searchParams.get("timezone")).toBe("Asia/Tokyo");
     expect(url.searchParams.get("daily")).toBe("sunrise,sunset");

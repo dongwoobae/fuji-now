@@ -44,6 +44,8 @@ export function buildWeatherUrl(lakes: readonly Lake[]): URL {
   url.searchParams.set("latitude", lakes.map((lake) => lake.latitude).join(","));
   url.searchParams.set("longitude", lakes.map((lake) => lake.longitude).join(","));
   url.searchParams.set("models", "jma_msm");
+  // 기본값(land)은 표고가 비슷한 육지 격자를 골라 최근접이 아닐 수 있다. 좌표 대조가 최근접 격자를 전제로 한다.
+  url.searchParams.set("cell_selection", "nearest");
   url.searchParams.set("current", "temperature_2m,cloud_cover,precipitation,wind_speed_10m");
   url.searchParams.set("hourly", "cloud_cover,precipitation");
   url.searchParams.set("daily", "sunrise,sunset");
