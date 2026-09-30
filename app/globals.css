@@ -28,8 +28,9 @@ a { color: inherit; }
 .compare-wrap { overflow-x: auto; }
 .compare-table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .compare-table th { text-align: left; font-size: 12px; letter-spacing: .08em; color: #527985; padding: 0 10px 10px; }
-.compare-table td { border-top: 1px solid #edf2f2; padding: 12px 10px; }
-.compare-table a { font-weight: 700; text-decoration: none; }
+.compare-table td { border-top: 1px solid #edf2f2; padding: 0; }
+.compare-table td a { display: block; padding: 12px 10px; color: inherit; text-decoration: none; }
+.compare-table td:first-child a { font-weight: 700; }
 
 .lake-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 20px; }
 .lake-card { padding: 16px; display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 16px; }

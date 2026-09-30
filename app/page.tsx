@@ -67,9 +67,9 @@ export default async function Home() {
                   return (
                     <tr key={lake.id}>
                       <td><a href={`#lake-${lake.id}`}>{lake.name}</a></td>
-                      <td>{weather ? `${weather.cloudCover}%` : "—"}</td>
-                      <td>{weather ? `${Math.round(weather.temperature)}°` : "—"}</td>
-                      <td>{CAMERA_LABEL[cameraStateOf(data).kind]}</td>
+                      <td><a href={`#lake-${lake.id}`} tabIndex={-1} aria-hidden="true">{weather ? `${weather.cloudCover}%` : "—"}</a></td>
+                      <td><a href={`#lake-${lake.id}`} tabIndex={-1} aria-hidden="true">{weather ? `${Math.round(weather.temperature)}°` : "—"}</a></td>
+                      <td><a href={`#lake-${lake.id}`} tabIndex={-1} aria-hidden="true">{CAMERA_LABEL[cameraStateOf(data).kind]}</a></td>
                     </tr>
                   );
                 })}
