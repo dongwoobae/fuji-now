@@ -130,9 +130,9 @@
 - **페이지** `/` (서버 컴포넌트): `readSnapshot()`으로 읽어서 그린다. 바인딩은 `import { env } from "cloudflare:workers"`로 접근한다. 브라우저 쪽 코드는 플레이어 열고 닫기와 "N분 전" 계산에만 쓴다.
 - **정책 페이지** `/privacy`.
 
-### 스냅샷 (KV 키 하나, `snapshot:v2`)
+### 스냅샷 (KV 키 하나, `snapshot:v3`)
 
-2026-09-30에 관측을 더하면서 `snapshot:v1`에서 올렸다.
+2026-09-30에 관측을 더하면서 v2로, 시간별 예보를 하층 운량으로 바꾸면서 v3로 올렸다.
 
 ```
 writtenAt                    // KV에 쓴 시각. 기록용이며 화면의 신선도 판단에 쓰지 않는다
@@ -143,7 +143,7 @@ lakes[]:
   candidates[] { videoId, status }   // live | ended | upcoming | missing | not_embeddable
   cameraCheckedAt | null
   weather { time, temperature, cloudCover, precipitation, windSpeed,
-            hourly[] { time, cloudCover, precipitation } } | null
+            hourly[] { time, lowCloudCover, precipitation } } | null
   weatherCheckedAt | null
 observations[] { id, observedAt, precipitation1h | null, precipitation24h | null }   // 관측소별, 기상청 AMeDAS
 observationsCheckedAt | null
@@ -177,7 +177,7 @@ observationsCheckedAt | null
 1. `readSnapshot()`으로 직전 스냅샷을 읽는다.
 2. 세 호출을 동시에 보낸다. 각각 10초가 지나면 끊는다.
    - YouTube `videos.list` 1회: 모든 후보 ID, `part=snippet,status,liveStreamingDetails`
-   - Open-Meteo 1회: 좌표 5개, `models=jma_msm`, `cell_selection=nearest`, `current`, `hourly`(`forecast_hours`로 필요한 시간만), `daily=sunrise,sunset`, `wind_speed_unit=ms`, `timezone=Asia/Tokyo`
+   - Open-Meteo 1회: 좌표 5개, `models=jma_msm`, `cell_selection=nearest`, `current`, `hourly=cloud_cover_low,precipitation`(`forecast_hours`로 필요한 시간만), `daily=sunrise,sunset`, `wind_speed_unit=ms`, `timezone=Asia/Tokyo`
    - 기상청 AMeDAS: `latest_time.txt` 1회, 그 시각이 든 관측소 파일을 관측소마다 1회
 3. 세 응답을 zod로 검사한다. 형식이 다르면 그 호출은 실패로 처리한다.
    - Open-Meteo는 여러 지점 요청의 응답 순서를 문서로 보장하지 않는다. 그래서 응답의 각 지점 좌표가 같은 순서의 요청 좌표와 위도·경도 모두 0.03° 안에 있는지 확인한다. 벗어나면 기상 호출 실패로 처리한다.
@@ -195,7 +195,7 @@ observationsCheckedAt | null
 - **호수 카드**: 동쪽부터 야마나카코 → 가와구치코 → 사이코 → 쇼지코 → 모토스코 순서다.
   - 현재 운량·기온·강수량·풍속(역후지 참고 표시). 모델 강수 칸에는 "예보"를 붙인다.
   - 관측 강수: 최근 1시간·24시간, 관측소 이름, 관측 시각. 관측을 받지 못하면 이 줄은 숨긴다. 관측 시각을 함께 보여주므로 상단 "N분 전" 계산에는 넣지 않는다.
-  - 앞으로 8시간 운량 막대(기존 스타일)
+  - 앞으로 8시간 하층 운량 막대와 강수 예보. 머리글은 "시각 · 하층 운량 (예보) · 강수"다. 전체 운량보다 하층 구름이 산을 가리는지와 직접 맞닿는다. 2026-09-30 11시대에는 河口湖 시정이 20km였는데도 하층 운량이 89%라 산이 보이지 않았다.
   - 카메라 자리
 - **카드 배치**
   - 넓은 화면은 3열(윗줄 3개, 아랫줄 2개 가운데 정렬), 중간 폭은 2열, 좁은 화면은 1열이다.

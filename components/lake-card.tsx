@@ -47,11 +47,17 @@ export function LakeCard({ lake, data, observation, night, now }: Props) {
 
       {weather && (
         <div className="hour-list">
+          <div className="hour hour-head">
+            <span>시각</span>
+            <span>하층 운량 (예보)</span>
+            <span />
+            <span>강수</span>
+          </div>
           {upcomingHours(weather, now).map((hour) => (
             <div className="hour" key={hour.time}>
               <span>{formatJstTime(hour.time)}</span>
-              <div className="bar-track"><div className="bar-fill" style={{ width: `${hour.cloudCover}%` }} /></div>
-              <strong>{hour.cloudCover}%</strong>
+              <div className="bar-track"><div className="bar-fill" style={{ width: `${hour.lowCloudCover}%` }} /></div>
+              <strong>{hour.lowCloudCover}%</strong>
               <small>{hour.precipitation}mm</small>
             </div>
           ))}

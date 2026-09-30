@@ -20,7 +20,7 @@ const locationSchema = z.object({
   }),
   hourly: z.object({
     time: z.array(localTime),
-    cloud_cover: z.array(z.number()),
+    cloud_cover_low: z.array(z.number()),
     precipitation: z.array(z.number()),
   }),
   daily: z.object({
@@ -47,7 +47,7 @@ export function buildWeatherUrl(lakes: readonly Lake[]): URL {
   // 기본값(land)은 표고가 비슷한 육지 격자를 골라 최근접이 아닐 수 있다. 좌표 대조가 최근접 격자를 전제로 한다.
   url.searchParams.set("cell_selection", "nearest");
   url.searchParams.set("current", "temperature_2m,cloud_cover,precipitation,wind_speed_10m");
-  url.searchParams.set("hourly", "cloud_cover,precipitation");
+  url.searchParams.set("hourly", "cloud_cover_low,precipitation");
   url.searchParams.set("daily", "sunrise,sunset");
   url.searchParams.set("forecast_hours", String(FORECAST_HOURS));
   url.searchParams.set("wind_speed_unit", "ms");
@@ -70,8 +70,8 @@ export function parseWeatherResponse(json: unknown, lakes: readonly Lake[], sunL
     ) {
       throw new Error(`Open-Meteo location ${i} does not match ${lake.id}`);
     }
-    const { time, cloud_cover: cloud, precipitation } = location.hourly;
-    if (cloud.length !== time.length || precipitation.length !== time.length) {
+    const { time, cloud_cover_low: lowCloud, precipitation } = location.hourly;
+    if (lowCloud.length !== time.length || precipitation.length !== time.length) {
       throw new Error(`Open-Meteo hourly arrays differ in length for ${lake.id}`);
     }
     byLake[lake.id] = {
@@ -80,7 +80,7 @@ export function parseWeatherResponse(json: unknown, lakes: readonly Lake[], sunL
       cloudCover: location.current.cloud_cover,
       precipitation: location.current.precipitation,
       windSpeed: location.current.wind_speed_10m,
-      hourly: time.map((hour, h) => ({ time: toJstIso(hour), cloudCover: cloud[h], precipitation: precipitation[h] })),
+      hourly: time.map((hour, h) => ({ time: toJstIso(hour), lowCloudCover: lowCloud[h], precipitation: precipitation[h] })),
     };
     if (lake.id === sunLake) {
       sun = { sunrise: toJstIso(location.daily.sunrise[0]), sunset: toJstIso(location.daily.sunset[0]) };
