@@ -28,7 +28,7 @@ export default async function Home() {
       </header>
 
       <section className="intro">
-        <h1>지금, 후지산이<br />보일까?</h1>
+        <h1>지금, 후지산이 보일까?</h1>
         <p className="subcopy">
           후지 5호의 라이브 카메라와 기상청 MSM 예보를 나눠서 보여줍니다. 운량은 예보 모델 값이니, 실제로 보이는지는 카메라로 확인하세요.
         </p>
