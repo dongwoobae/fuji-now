@@ -32,6 +32,12 @@ pnpm test
 
 ## 배포
 
+main에 병합하면 GitHub Actions(`.github/workflows/ci.yml`)가 lint·typecheck·test·build를 거쳐 배포한다. PR에서는 배포만 빼고 같은 검사와 빌드가 돈다. 문서(`docs/**`, `*.md`)만 바뀐 커밋에서는 돌지 않는다.
+
+배포에는 GitHub Secret `CLOUDFLARE_API_TOKEN`이 필요하다. Cloudflare 대시보드에서 "Edit Cloudflare Workers" 템플릿으로 만들고, 범위를 이 계정과 dwoobae.com 존으로 좁힌다. `YOUTUBE_API_KEY`는 워커 secret이라 배포해도 유지된다.
+
+로컬에서 직접 배포하는 것은 CI 검사를 거치지 않는 비상 경로다.
+
 ```sh
 pnpm exec wrangler login   # 처음 한 번
 pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게 동작한다
@@ -45,10 +51,11 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 | 자원 | 만드는 방법 | 확인 |
 |---|---|---|
-| 워커 `fuji-now` | `pnpm run deploy` | `pnpm exec wrangler deployments list` |
+| 워커 `fuji-now` | main 병합(GitHub Actions) 또는 `pnpm run deploy` | `pnpm exec wrangler deployments list` |
 | 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
 | KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v1 --binding SNAPSHOT_KV --remote` |
 | secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
+| GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
 | 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
 
 `wrangler.jsonc`에서 바인딩을 지워도 실제 자원은 남는다. 사이트를 내릴 때는 아래 순서로 지운다.
@@ -56,11 +63,13 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 1. `pnpm exec wrangler delete fuji-now` — 워커와 예약 작업, secret이 함께 지워진다. 그 뒤 대시보드의 dwoobae.com DNS에 `fujinow` 레코드가 남았는지 확인한다.
 2. `pnpm exec wrangler kv namespace delete --binding SNAPSHOT_KV`
 3. Google Cloud 콘솔에서 fuji-now용 API 키를 폐기한다.
+4. Cloudflare 대시보드에서 fuji-now 배포용 API 토큰을 폐기하고, GitHub Secret을 지운다.
 
 ## 구조
 
 | 경로 | 내용 |
 |---|---|
+| `.github/workflows/ci.yml` | PR·main 검사와 main 배포 |
 | `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
 | `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |

@@ -27,7 +27,7 @@
   - 지워지는 파일이나 D1을 가리키는 `install:ci`와 `db:generate`는 지운다.
 - 바인딩 타입은 `wrangler types`로 생성한다. 지금의 `cloudflare-env.d.ts`(`DB`·`BUCKET` 선언)는 이것으로 교체한다.
 - README의 실행·배포 설명과 "현재 상태"를 바뀐 배포 방식에 맞게 고친다. KV 네임스페이스·secret·예약 작업을 누가 어떻게 만들고, 사이트를 내릴 때 어떤 순서로 지우는지도 적는다. 설정에서 바인딩을 지워도 실제 자원은 남기 때문이다.
-- 배포는 로컬에서 직접 한다. GitHub 푸시 자동 배포는 하지 않는다.
+- 배포는 로컬에서 직접 한다. GitHub 푸시 자동 배포는 하지 않는다. (2026-09-30부터는 main 병합 시 GitHub Actions가 배포한다. "결정과 근거"의 배포 행 참고)
 - 완료 기준: workers.dev 주소에서 기존 기상 화면이 폰으로 열린다.
 
 **2단계: 5호 카메라 + 호수별 기상**
@@ -42,7 +42,7 @@
 
 | 주제 | 결정 | 근거 / 기각한 대안 |
 |---|---|---|
-| 배포 | 내 Cloudflare 계정. 2026-09-30부터 자체 도메인 `fujinow.dwoobae.com`(Workers Custom Domain)으로 열고 workers.dev는 끈다 | Sites는 GitHub와 연동되지 않아 로컬 변경이 배포되지 않는다. workers.dev를 열어 두면 dwoobae.com 존의 WAF·속도 제한을 거치지 않는 입구가 남는다. |
+| 배포 | 내 Cloudflare 계정. 2026-09-30부터 자체 도메인 `fujinow.dwoobae.com`(Workers Custom Domain)으로 열고 workers.dev는 끈다 | Sites는 GitHub와 연동되지 않아 로컬 변경이 배포되지 않는다. workers.dev를 열어 두면 dwoobae.com 존의 WAF·속도 제한을 거치지 않는 입구가 남는다. 2026-09-30부터 main에 병합하면 GitHub Actions(`.github/workflows/ci.yml`)가 lint·typecheck·test·build를 거쳐 배포한다. 로컬 `pnpm run deploy`는 이 검사를 거치지 않는 비상 경로다. |
 | AI 사진 판정 | 코드까지 삭제 | 여행자는 사진을 올리지 않는다. 앞으로의 판정은 서버가 허가받은 카메라를 분석하는 형태가 된다. 필요하면 git 이력에서 되살린다. |
 | 카메라 소스 | YouTube 라이브 임베드만 사용 | YouTube 약관은 임베드 표시를 허용하고, 허가 없는 다운로드·스크래퍼 접근을 금지한다. 프레임을 떠서 분석하는 것은 허가를 받은 뒤에 한다. |
 | 썸네일 | 쓰지 않는다 | 라이브 썸네일(`hqdefault_live.jpg`)은 채널이 올린 대표 이미지였다(맑은 날·겨울 사진). 지금 화면으로 오해하게 만든다. |
@@ -263,7 +263,7 @@ lakes[]:
   - `wrangler kv key get`으로 저장된 스냅샷을 직접 확인한다.
   - 폰에서 https://fujinow.dwoobae.com 을 연다.
   - 폭 320·768·1280px에서 배치를 확인한다.
-- **자동 검사**: `tsc --noEmit`, `eslint`, 빌드.
+- **자동 검사**: `tsc --noEmit`, `eslint`, vitest, 빌드. PR과 main push마다 GitHub Actions에서 돈다.
 
 ## 알려진 한계
 
