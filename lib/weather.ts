@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Lake, LakeId } from "./lakes";
 import type { LakeWeather } from "./snapshot/schema";
 
-// MSM 격자(0.05°)에 맞춰 옮겨진 좌표는 반 칸까지 어긋난다. 쇼지코·모토스코는 경도가 격자 한 칸 남짓 떨어져 있어서 이보다 느슨하면 둘이 바뀐 것을 못 잡는다.
+// MSM 격자는 위도 0.05°·경도 0.0625°다. 쇼지코·모토스코가 서로 바뀌면 요청 좌표와 경도가 0.037° 이상 어긋나므로 그보다 좁게 잡는다. 이 값은 경도 반 칸(0.03125°)보다 좁아서, 경도가 격자선 사이 한가운데에 가까운 호수를 추가하면 정상 응답도 실패한다.
 export const COORDINATE_TOLERANCE = 0.03;
 export const FORECAST_HOURS = 9;
 
