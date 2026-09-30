@@ -1,126 +1,88 @@
-# vinext-starter
+# FUJI NOW
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+후지 5호(야마나카코·가와구치코·사이코·쇼지코·모토스코)에서 **지금 후지산이 보이는지**를 한 화면으로 확인하는 웹사이트다. 여행 당일 여러 라이브카메라와 기상예보를 일일이 열어 대조하던 일을 대신한다.
 
-## Prerequisites
+예보(모델이 계산한 운량 등)와 지금 모습(카메라)을 섞지 않고 나눠서 보여주는 것을 원칙으로 한다.
 
-- Node.js `>=22.13.0`
-- Portable: Windows, macOS, or Linux; no Bash required
-- Managed Linux: managed Linux runtime with Bash, `flock`, `curl`, `sha256sum`, and GNU `timeout`
-- Git is required only for publishing
+## 현재 상태
 
-## Sites Lifecycle
+- 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fujinow.dwoobae.com (Workers Custom Domain). workers.dev 주소는 끈다.
+- 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
+- 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다.
+- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상을 받아 KV 스냅샷 하나(`snapshot:v1`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 
-The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `app/` and follow the Sites skill for installation, preview, builds, and publishing.
+## 로컬 실행
 
-Run `node <plugin-root>/scripts/configure-execution-profile.mjs` only when the profile is unknown for the current checkout and environment. Profile changes do not alter tracked source or require reinstalling otherwise-valid dependencies; restart an existing preview to use the new selection. Do not commit or upload `.sites-runtime/`.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` runs `npm ci` once against the shared lockfile, disables parent-workspace discovery, and includes required dev/optional dependencies despite production/omit settings. Sharp defaults to prebuilt binaries unless explicitly configured otherwise. Do not overlap installers.
-
-- **Portable:** Preserve host HOME, npm cache, registry, proxy, temporary paths, retry/concurrency settings, and lifecycle-script policy. Use `--prefer-offline --no-audit --no-fund`.
-- **Managed Linux:** Use the existing project-local HOME/cache/tmp setup and Linux install lock, tarball preflight, and timeout. Restore the image-seeded npm cache only when its lockfile hash matches; retain network fallback. Builds keep their existing timeout. These helpers are not invoked by the portable profile.
-
-`scripts/sites-env.mjs` preserves the caller's HOME, npm cache, proxy, XDG, and temporary-directory configuration while defaulting Wrangler and Miniflare state to the checkout. If npm reports an unwritable cache, select a writable path with `npm_config_cache` for that install. The `dev` and `start` scripts also keep Wrangler logs inside the checkout. Generated `.sites-runtime/` and `.wrangler/` directories are disposable and ignored by Git.
-
-On portable, `npm run dev` uses `vinext dev` with HMR, starting at port 5173. Vinext records the running server in ignored `.vinext/` state, rejects an ordinary duplicate launch, and recovers stale state after a stopped process; exactly simultaneous starts can race. Pass `--port <port>` or `--hostname <host>` after `npm run dev --` when needed; keep portable previews on loopback.
-
-For browser QA on managed Linux, use `sites-preview start`. The project's dev script runs Vite and accepts the supervisor's `--host 0.0.0.0 --port 4173 --strictPort` arguments. The internal browser uses `http://terminal.local:4173/`; it is not a user-facing URL. The supervisor owns the preview lifecycle. The ignored local profile survives the supervisor's cleared process environment.
-
-The portable profile simulates ChatGPT sign-in only for loopback development requests. Visit `/signin-with-chatgpt?return_to=/` to sign in as `local_seedy` (`seedy@sites.test`, display name `Seedy`) and `/signout-with-chatgpt?return_to=/` to sign out. The development cookie preserves that identity across server restarts. Mock auth is disabled in the managed-linux profile and is not included in production builds; hosted authentication remains dispatch-owned.
-
-The Worker uses `vinext/server/fetch-handler`, including Vinext's config-aware image handling. After building, `npm start` runs that Worker locally through Wrangler on `127.0.0.1`, sharing `.wrangler/state` with dev preview and local D1 migrations; it does not deploy the site or simulate sign-in. Use the URL printed by the server. Pass `npm start -- --port <port>` to select a different built-preview port.
-
-Local previews use Miniflare's placeholder `Request.cf` metadata without a network lookup. Set `CLOUDFLARE_CF_FETCH_ENABLED=true` to opt into fetching preview metadata; this setting does not change hosted request metadata.
-
-Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=true` to opt in.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Use it as the durable user key; use email and name for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive `oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty `name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by `oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use the returned `userId` as the stable user key for user-owned records; do not use email as a durable identifier.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the OAuth cookies, and identity header injection. Do not implement app routes for those reserved paths. Routes that do not import and call the helper remain anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the Sites hosting platform's access policy controls for workspace-wide restrictions, or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Local D1 migrations
-
-For a D1-backed local preview, generate SQL with `npm run db:generate`. Build once through the Sites skill's build entrypoint (or `npm run build` for standalone use) to generate `dist/server/wrangler.json`, rebuilding if bindings change. From the project root, apply each pending migration in order:
+Node.js 22.13 이상과 pnpm이 필요하다.
 
 ```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_example.sql
+pnpm install
+pnpm dev          # http://localhost:5173
+pnpm build
+pnpm start        # 빌드 결과를 로컬 wrangler로 실행 (http://127.0.0.1:8799)
+pnpm typecheck
+pnpm lint
+pnpm test
 ```
 
-Replace the filename with the pending migration and `DB` with your D1 binding name if different. Use `.wrangler/state`, not `.wrangler/state/v3`; Wrangler adds the versioned directories. Do not replay migrations already applied locally. This updates only the preview database; publishing applies production migrations separately.
+- 서버 비밀값(API 키)은 `.env.local`에 두고 커밋하지 않는다. `.gitignore`가 `.env*`를 제외한다. 로컬 wrangler는 `.dev.vars`가 없으면 `.env`와 `.env.local`을 읽는다.
+- `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
+- 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
+- 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
 
-## Diagnostic Commands
+## 배포
 
-- `npm run install:ci`: perform the one locked dependency install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: preview the built Worker locally with D1/R2 support
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+main에 병합하면 GitHub Actions(`.github/workflows/ci.yml`)가 lint·typecheck·test·build를 거쳐 배포한다. PR에서는 배포만 빼고 같은 검사와 빌드가 돈다. 문서(`docs/**`, `*.md`)만 바뀐 커밋에서는 돌지 않는다.
 
-When using the Sites plugin, follow its skill instructions for installation, builds, and publishing. These npm commands remain available for standalone use.
+배포에는 GitHub Secret `CLOUDFLARE_API_TOKEN`이 필요하다. Cloudflare 대시보드에서 "Edit Cloudflare Workers" 템플릿으로 만들고, 범위를 이 계정과 dwoobae.com 존으로 좁힌다. `YOUTUBE_API_KEY`는 워커 secret이라 배포해도 유지된다.
 
-The portable build runs Vinext directly without a host `timeout` command. The managed-linux build uses `scripts/build-verified.sh` and its existing `SITES_BUILD_TIMEOUT` setting.
+로컬에서 직접 배포하는 것은 CI 검사를 거치지 않는 비상 경로다.
 
-## Learn More
+```sh
+pnpm exec wrangler login   # 처음 한 번
+pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게 동작한다
+```
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## 카메라 후보 바꾸기
+
+`lib/lakes.ts`의 `candidates`가 호수별 후보 영상 ID 목록이다. 앞에 있을수록 우선한다. 방송이 새 ID로 재시작되면 옛 ID는 `ended`나 `missing`이 되고, 그 호수는 "방송 없음"으로 보인다. 예약 작업 로그의 `notLive`에서 끊긴 후보를 확인할 수 있다. 새 ID를 목록에 넣고 다시 배포한다.
+
+## 운영 자원
+
+| 자원 | 만드는 방법 | 확인 |
+|---|---|---|
+| 워커 `fuji-now` | main 병합(GitHub Actions) 또는 `pnpm run deploy` | `pnpm exec wrangler deployments list` |
+| 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
+| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v1 --binding SNAPSHOT_KV --remote` |
+| secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
+| GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
+| 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
+
+`wrangler.jsonc`에서 바인딩을 지워도 실제 자원은 남는다. 사이트를 내릴 때는 아래 순서로 지운다.
+
+1. `pnpm exec wrangler delete fuji-now` — 워커와 예약 작업, secret이 함께 지워진다. 그 뒤 대시보드의 dwoobae.com DNS에 `fujinow` 레코드가 남았는지 확인한다.
+2. `pnpm exec wrangler kv namespace delete --binding SNAPSHOT_KV`
+3. Google Cloud 콘솔에서 fuji-now용 API 키를 폐기한다.
+4. Cloudflare 대시보드에서 fuji-now 배포용 API 토큰을 폐기하고, GitHub Secret을 지운다.
+
+## 구조
+
+| 경로 | 내용 |
+|---|---|
+| `.github/workflows/ci.yml` | PR·main 검사와 main 배포 |
+| `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
+| `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
+| `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
+| `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크) |
+| `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
+| `lib/youtube.ts`, `lib/weather.ts` | 외부 API 호출과 응답 검사 |
+| `lib/view.ts` | 화면 표시 계산 |
+| `app/page.tsx`, `components/` | 화면 |
+| `app/privacy/page.tsx` | 개인정보처리방침 |
+| `docs/specs/` | 설계 문서 |
+
+## 외부 데이터 이용 시 주의
+
+- 카메라 영상과 이미지의 권리는 각 운영자에게 있다. YouTube 영상은 임베드 플레이어로만 보여주고, 허가 없이 프레임이나 이미지를 자동으로 수집하지 않는다.
+- Open-Meteo 데이터는 CC BY 4.0이라 출처를 표기해야 한다. 무료 API는 비상업용에만 쓸 수 있다.
+- YouTube API Services 정책에 따라 API로 받은 데이터는 30일 안에 지우거나 새로 받는다. 스냅샷은 5분마다 새로 쓰고, 이어받는 값은 1시간을 넘기지 않으며, KV 만료는 1일이다. 테스트 데이터(`lib/__fixtures__/youtube-videos.json`)는 구조만 실제이고 내용 값은 바꿔 두었다.

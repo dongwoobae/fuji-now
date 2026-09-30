@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fuji-now",
+  "account_id": "1dafd4cb9889ab12c13852360fadf60f",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [{ "binding": "SNAPSHOT_KV", "id": "afeb2312ac904b1dae7cea299122752f" }],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "routes": [{ "pattern": "fujinow.dwoobae.com", "custom_domain": true }],
+  // 끄는 이유는 docs/specs 설계 문서 "결정과 근거"의 배포 행에 있다.
+  "workers_dev": false
+}
