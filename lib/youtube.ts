@@ -42,9 +42,7 @@ export async function fetchVideos(ids: string[], apiKey: string, signal: AbortSi
   const url = new URL("https://www.googleapis.com/youtube/v3/videos");
   url.searchParams.set("part", "snippet,status,liveStreamingDetails");
   url.searchParams.set("id", ids.join(","));
-  url.searchParams.set("key", apiKey);
-  const response = await fetch(url, { signal });
-  // URL에 키가 들어 있으므로 에러 메시지에는 상태 코드만 남긴다.
+  const response = await fetch(url, { signal, headers: { "x-goog-api-key": apiKey } });
   if (!response.ok) throw new Error(`YouTube videos.list ${response.status}`);
   return parseVideosResponse(await response.json());
 }

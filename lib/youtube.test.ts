@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fixture from "./__fixtures__/youtube-videos.json";
-import { classifyCandidate, parseVideosResponse, selectLakeCamera, type VideoItem } from "./youtube";
+import { classifyCandidate, fetchVideos, parseVideosResponse, selectLakeCamera, type VideoItem } from "./youtube";
 
 const items = parseVideosResponse(fixture);
 const base = items[0];
@@ -77,5 +77,32 @@ describe("selectLakeCamera", () => {
 
   it("has no camera and no candidates for a lake without candidates", () => {
     expect(selectLakeCamera([], items)).toEqual({ camera: null, candidates: [] });
+  });
+});
+
+describe("fetchVideos", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("sends the key in a header and never in the URL", async () => {
+    const fetchMock = vi.fn(async () => Response.json(fixture));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchVideos(["a", "b"], "secret-key", new AbortController().signal);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [input, init] = fetchMock.mock.calls[0] as unknown as [URL, RequestInit];
+    const url = new URL(input.toString());
+    expect(`${url.origin}${url.pathname}`).toBe("https://www.googleapis.com/youtube/v3/videos");
+    expect(url.searchParams.get("part")).toBe("snippet,status,liveStreamingDetails");
+    expect(url.searchParams.get("id")).toBe("a,b");
+    expect(url.searchParams.has("key")).toBe(false);
+    expect(url.toString()).not.toContain("secret-key");
+    expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("secret-key");
+    expect(result).toEqual(items);
+  });
+
+  it("rejects with the status only, without the key", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("denied", { status: 403 })));
+    const failure = fetchVideos(["a"], "secret-key", new AbortController().signal);
+    await expect(failure).rejects.toThrow("YouTube videos.list 403");
+    await expect(failure).rejects.not.toThrow("secret-key");
   });
 });
