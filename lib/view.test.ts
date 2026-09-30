@@ -4,7 +4,7 @@ import { cameraStateOf, formatJstTime, freshnessOf, isNight, isStale, upcomingHo
 
 const lake = (patch: Partial<LakeSnapshot>): LakeSnapshot => ({
   id: "kawaguchiko",
-  camera: null,
+  cameras: [],
   candidates: [],
   cameraCheckedAt: "2026-09-29T07:00:00.000Z",
   weather: null,
@@ -18,6 +18,7 @@ const snapshotOf = (lakes: LakeSnapshot[]): Snapshot => ({
   lakes,
   observations: [],
   observationsCheckedAt: null,
+  spots: { cameras: [], candidates: [], cameraCheckedAt: null },
 });
 
 describe("freshnessOf", () => {
@@ -96,9 +97,9 @@ describe("cameraStateOf", () => {
   it("distinguishes unchecked, offline and live", () => {
     expect(cameraStateOf(null)).toEqual({ kind: "unchecked" });
     expect(cameraStateOf(lake({ cameraCheckedAt: null }))).toEqual({ kind: "unchecked" });
-    expect(cameraStateOf(lake({ camera: null }))).toEqual({ kind: "offline" });
+    expect(cameraStateOf(lake({ cameras: [] }))).toEqual({ kind: "offline" });
     const camera = { videoId: "abc", title: "t", channelTitle: "c" };
-    expect(cameraStateOf(lake({ camera }))).toEqual({ kind: "live", camera });
+    expect(cameraStateOf(lake({ cameras: [camera] }))).toEqual({ kind: "live", cameras: [camera] });
   });
 });
 

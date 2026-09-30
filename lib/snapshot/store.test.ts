@@ -9,6 +9,7 @@ const snapshot: Snapshot = {
   lakes: [],
   observations: [],
   observationsCheckedAt: null,
+  spots: { cameras: [], candidates: [], cameraCheckedAt: null },
 };
 
 function fakeKv(options: { stored?: string; getError?: Error } = {}) {

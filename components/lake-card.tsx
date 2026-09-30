@@ -1,15 +1,13 @@
-import { ExternalLink } from "lucide-react";
 import { OBSERVATION_STATIONS, type Lake } from "@/lib/lakes";
 import type { LakeSnapshot, Observation } from "@/lib/snapshot/schema";
-import { cameraStateOf, formatJstTime, upcomingHours, windLabel } from "@/lib/view";
-import { LakePlayer } from "./lake-player";
+import { formatJstTime, upcomingHours, windLabel } from "@/lib/view";
+import { CameraSlot } from "./camera-slot";
 
 type Props = { lake: Lake; data: LakeSnapshot | null; observation: Observation | null; night: boolean; now: Date };
 
 const mm = (value: number | null) => (value === null ? "—" : `${value}mm`);
 
 export function LakeCard({ lake, data, observation, night, now }: Props) {
-  const camera = cameraStateOf(data);
   const weather = data?.weather ?? null;
 
   return (
@@ -64,16 +62,7 @@ export function LakeCard({ lake, data, observation, night, now }: Props) {
         </div>
       )}
 
-      {camera.kind === "live" ? (
-        <LakePlayer videoId={camera.camera.videoId} lakeName={lake.name} channelTitle={camera.camera.channelTitle} />
-      ) : (
-        <div className="camera-empty">
-          <p>{camera.kind === "unchecked" ? "방송 확인 전입니다." : "지금 방송 중인 카메라가 없습니다."}</p>
-          <a href={lake.fallback.url} target="_blank" rel="noopener noreferrer">
-            {lake.fallback.label} <ExternalLink size={14} aria-hidden />
-          </a>
-        </div>
-      )}
+      <CameraSlot card={lake} part={data} />
     </article>
   );
 }

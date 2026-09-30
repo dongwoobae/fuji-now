@@ -54,6 +54,10 @@ a { color: inherit; }
 .bar-track { height: 8px; background: #e8f1f2; border-radius: 10px; overflow: hidden; }
 .bar-fill { height: 100%; background: #78a9b5; border-radius: 10px; }
 
+.camera-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.camera-tabs button { width: 32px; height: 32px; border: 1px solid #cbdde0; border-radius: 8px; background: #fff; color: #194c60; font-weight: 700; }
+.camera-tabs button[aria-pressed="true"] { background: #133f50; border-color: #133f50; color: #fff; }
+.camera-label { margin-left: 4px; font-size: 13px; color: #58717b; }
 .player, .player-facade { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; border-radius: 12px; overflow: hidden; }
 .player iframe { display: block; width: 100%; height: 100%; border: 0; }
 .player-facade { border: 1px solid #cbdde0; background: #133f50; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
@@ -73,14 +77,10 @@ a { color: inherit; }
 .prose h2 { margin-top: 28px; font-size: 18px; }
 
 @media (min-width: 880px) {
-  .lake-grid { grid-template-columns: repeat(4, 1fr); }
-  .lake-card { grid-column: span 2; }
-  .lake-card:nth-child(5) { grid-column: 2 / span 2; }
+  .lake-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1290px) {
-  .lake-grid { grid-template-columns: repeat(6, 1fr); }
-  .lake-card:nth-child(4) { grid-column: 2 / span 2; }
-  .lake-card:nth-child(5) { grid-column: 4 / span 2; }
+  .lake-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 800px) {
   .shell { padding: 0 20px 24px; }

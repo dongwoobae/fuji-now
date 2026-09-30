@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LAKES, SUN_REFERENCE_LAKE } from "../lakes";
+import { CAMERA_CARDS, LAKES, SPOTS, SUN_REFERENCE_LAKE } from "../lakes";
 import type { VideoItem } from "../youtube";
 import type { WeatherResult } from "../weather";
 import { buildSnapshot, type SourceResult } from "./build";
@@ -13,7 +13,10 @@ const liveItem = (id: string): VideoItem => ({
   snippet: { title: `title ${id}`, channelTitle: "channel", liveBroadcastContent: "live" },
   status: { embeddable: true },
 });
-const allLive: SourceResult<VideoItem[]> = { ok: true, value: LAKES.flatMap((lake) => lake.candidates).map(liveItem) };
+const allLive: SourceResult<VideoItem[]> = {
+  ok: true,
+  value: CAMERA_CARDS.flatMap((card) => card.candidates).map((candidate) => liveItem(candidate.videoId)),
+};
 
 const weatherOf = (temperature: number): SourceResult<WeatherResult> => ({
   ok: true,
@@ -36,8 +39,8 @@ const observedOf = (precipitation1h: number): SourceResult<Observation[]> => ({
 });
 
 type Input = Parameters<typeof buildSnapshot>[0];
-const build = (input: Omit<Input, "lakes" | "observations"> & Partial<Pick<Input, "observations">>) =>
-  buildSnapshot({ lakes: LAKES, observations: observedOf(0), ...input });
+const build = (input: Omit<Input, "lakes" | "spots" | "observations"> & Partial<Pick<Input, "observations">>) =>
+  buildSnapshot({ lakes: LAKES, spots: SPOTS, observations: observedOf(0), ...input });
 
 const previousAt = (at: Date) =>
   build({ previous: null, videos: allLive, weather: weatherOf(10), now: at });
@@ -49,7 +52,7 @@ describe("buildSnapshot", () => {
     const snapshot = build({ previous: null, videos: allLive, weather: weatherOf(12), now: NOW });
     expect(snapshot?.writtenAt).toBe(NOW.toISOString());
     expect(snapshot?.sunrise).toBe("2026-09-29T05:37:00+09:00");
-    expect(lake(snapshot, "kawaguchiko").camera?.videoId).toBe("bdUbACCWmoY");
+    expect(lake(snapshot, "kawaguchiko").cameras[0]?.videoId).toBe("bdUbACCWmoY");
     expect(lake(snapshot, "kawaguchiko").cameraCheckedAt).toBe(NOW.toISOString());
     expect(lake(snapshot, "kawaguchiko").weather?.temperature).toBe(12);
     expect(lake(snapshot, "kawaguchiko").weatherCheckedAt).toBe(NOW.toISOString());
@@ -57,7 +60,30 @@ describe("buildSnapshot", () => {
 
   it("marks a lake without candidates as checked with no camera", () => {
     const snapshot = build({ previous: null, videos: allLive, weather: weatherOf(12), now: NOW });
-    expect(lake(snapshot, "saiko")).toMatchObject({ camera: null, candidates: [], cameraCheckedAt: NOW.toISOString() });
+    expect(lake(snapshot, "saiko")).toMatchObject({ cameras: [], candidates: [], cameraCheckedAt: NOW.toISOString() });
+  });
+
+  it("shows up to three live cameras per lake in priority order", () => {
+    const snapshot = build({ previous: null, videos: allLive, weather: weatherOf(12), now: NOW });
+    const kawaguchiko = LAKES.find((l) => l.id === "kawaguchiko")!;
+    expect(lake(snapshot, "kawaguchiko").cameras.map((c) => c.videoId)).toEqual(
+      kawaguchiko.candidates.slice(0, 3).map((c) => c.videoId),
+    );
+    expect(lake(snapshot, "kawaguchiko").candidates).toHaveLength(kawaguchiko.candidates.length);
+  });
+
+  it("records the spots card like a lake camera part", () => {
+    const snapshot = build({ previous: null, videos: allLive, weather: weatherOf(12), now: NOW });
+    expect(snapshot?.spots.cameras.map((c) => c.videoId)).toEqual(SPOTS.candidates.slice(0, 3).map((c) => c.videoId));
+    expect(snapshot?.spots.cameraCheckedAt).toBe(NOW.toISOString());
+  });
+
+  it("carries the spots for up to an hour and then clears them", () => {
+    const carried = build({ previous: previousAt(minutesBefore(30)), videos: failed, weather: weatherOf(12), now: NOW });
+    expect(carried?.spots.cameras).toHaveLength(3);
+    expect(carried?.spots.cameraCheckedAt).toBe(minutesBefore(30).toISOString());
+    const cleared = build({ previous: previousAt(minutesBefore(61)), videos: failed, weather: weatherOf(12), now: NOW });
+    expect(cleared?.spots).toEqual({ cameras: [], candidates: [], cameraCheckedAt: null });
   });
 
   it("does not write when every source fails", () => {
@@ -86,7 +112,7 @@ describe("buildSnapshot", () => {
   it("carries the previous camera for up to an hour when YouTube fails", () => {
     const previous = previousAt(minutesBefore(30));
     const snapshot = build({ previous, videos: failed, weather: weatherOf(12), now: NOW });
-    expect(lake(snapshot, "kawaguchiko").camera?.videoId).toBe("bdUbACCWmoY");
+    expect(lake(snapshot, "kawaguchiko").cameras[0]?.videoId).toBe("bdUbACCWmoY");
     expect(lake(snapshot, "kawaguchiko").cameraCheckedAt).toBe(minutesBefore(30).toISOString());
     expect(lake(snapshot, "kawaguchiko").weatherCheckedAt).toBe(NOW.toISOString());
   });
@@ -94,7 +120,7 @@ describe("buildSnapshot", () => {
   it("clears the camera part once it is older than an hour", () => {
     const previous = previousAt(minutesBefore(61));
     const snapshot = build({ previous, videos: failed, weather: weatherOf(12), now: NOW });
-    expect(lake(snapshot, "kawaguchiko")).toMatchObject({ camera: null, candidates: [], cameraCheckedAt: null });
+    expect(lake(snapshot, "kawaguchiko")).toMatchObject({ cameras: [], candidates: [], cameraCheckedAt: null });
   });
 
   it("carries the previous weather and sun times for up to an hour when Open-Meteo fails", () => {
@@ -124,7 +150,7 @@ describe("buildSnapshot", () => {
     const previous = previousAt(minutesBefore(10))!;
     const withoutMotosu = { ...previous, lakes: previous.lakes.filter((l) => l.id !== "motosuko") };
     const snapshot = build({ previous: withoutMotosu, videos: failed, weather: weatherOf(12), now: NOW });
-    expect(lake(snapshot, "motosuko")).toMatchObject({ camera: null, candidates: [], cameraCheckedAt: null });
+    expect(lake(snapshot, "motosuko")).toMatchObject({ cameras: [], candidates: [], cameraCheckedAt: null });
   });
 
   it("uses the sun reference lake constant", () => {

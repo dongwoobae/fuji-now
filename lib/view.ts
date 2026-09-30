@@ -1,4 +1,4 @@
-import type { Camera, LakeSnapshot, LakeWeather, Snapshot } from "./snapshot/schema";
+import type { Camera, CameraPart, LakeWeather, Snapshot } from "./snapshot/schema";
 
 export const STALE_AFTER_MS = 20 * 60 * 1000;
 export const CALM_WIND_MAX_MS = 1.2;
@@ -38,11 +38,11 @@ export function upcomingHours(weather: LakeWeather, now: Date): LakeWeather["hou
   return weather.hourly.filter((hour) => Date.parse(hour.time) >= hourStart).slice(0, OUTLOOK_HOURS);
 }
 
-export type CameraState = { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; camera: Camera };
+export type CameraState = { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; cameras: Camera[] };
 
-export function cameraStateOf(lake: LakeSnapshot | null): CameraState {
-  if (lake === null || lake.cameraCheckedAt === null) return { kind: "unchecked" };
-  return lake.camera ? { kind: "live", camera: lake.camera } : { kind: "offline" };
+export function cameraStateOf(part: CameraPart | null): CameraState {
+  if (part === null || part.cameraCheckedAt === null) return { kind: "unchecked" };
+  return part.cameras.length > 0 ? { kind: "live", cameras: part.cameras } : { kind: "offline" };
 }
 
 const jstTime = new Intl.DateTimeFormat("en-GB", {

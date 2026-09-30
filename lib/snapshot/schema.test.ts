@@ -8,7 +8,7 @@ const valid: Snapshot = {
   lakes: [
     {
       id: "kawaguchiko",
-      camera: { videoId: "abc", title: "title", channelTitle: "channel" },
+      cameras: [{ videoId: "abc", title: "title", channelTitle: "channel" }],
       candidates: [{ videoId: "abc", status: "live" }],
       cameraCheckedAt: "2026-09-29T07:00:00.000Z",
       weather: null,
@@ -19,6 +19,11 @@ const valid: Snapshot = {
     { id: "49251", observedAt: "2026-09-29T15:50:00+09:00", precipitation1h: 0.5, precipitation24h: null },
   ],
   observationsCheckedAt: "2026-09-29T07:00:00.000Z",
+  spots: {
+    cameras: [],
+    candidates: [{ videoId: "spot", status: "ended" }],
+    cameraCheckedAt: "2026-09-29T07:00:00.000Z",
+  },
 };
 
 describe("parseSnapshot", () => {
@@ -43,6 +48,11 @@ describe("parseSnapshot", () => {
     delete previousShape.observations;
     delete previousShape.observationsCheckedAt;
     expect(parseSnapshot(previousShape)).toBeNull();
+  });
+
+  it("returns null for a snapshot with a single camera per lake", () => {
+    const { cameras, ...rest } = valid.lakes[0];
+    expect(parseSnapshot({ ...valid, lakes: [{ ...rest, camera: cameras[0] }] })).toBeNull();
   });
 
   it("accepts null sunrise and sunset", () => {

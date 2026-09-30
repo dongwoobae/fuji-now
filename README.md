@@ -8,8 +8,8 @@
 
 - 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fujinow.dwoobae.com (Workers Custom Domain). workers.dev 주소는 끈다.
 - 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
-- 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 하층 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다.
-- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v3`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
+- 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 하층 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다. 방송 중인 카메라가 여럿이면 최대 3대까지 번호로 골라 본다. 여섯 번째 명소 카드는 주레이토 5층탑 같은 호수 밖 전망 명소 카메라다.
+- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v4`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 
 ## 로컬 실행
 
@@ -45,7 +45,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 ## 카메라 후보 바꾸기
 
-`lib/lakes.ts`의 `candidates`가 호수별 후보 영상 ID 목록이다. 앞에 있을수록 우선한다. 방송이 새 ID로 재시작되면 옛 ID는 `ended`나 `missing`이 되고, 그 호수는 "방송 없음"으로 보인다. 예약 작업 로그의 `notLive`에서 끊긴 후보를 확인할 수 있다. 새 ID를 목록에 넣고 다시 배포한다.
+`lib/lakes.ts`에서 호수 카드는 `LAKES`의 `candidates`, 명소 카드는 `SPOTS`의 `candidates`가 후보 목록이다. 항목은 영상 ID와 화면에 보일 장소 이름(`label`)이다. 앞에 있을수록 우선하고, 방송 중인 것을 앞에서부터 3대까지 보여준다. 방송이 새 ID로 재시작되면 옛 ID는 `ended`나 `missing`이 되어 다음 후보가 올라온다. 후보가 모두 꺼지면 그 카드는 "방송 없음"으로 보인다. 예약 작업 로그의 `notLive`에서 끊긴 후보를 확인할 수 있다. 새 ID를 목록에 넣고 다시 배포한다.
 
 ## 운영 자원
 
@@ -53,7 +53,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 |---|---|---|
 | 워커 `fuji-now` | main 병합(GitHub Actions) 또는 `pnpm run deploy` | `pnpm exec wrangler deployments list` |
 | 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
-| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v3 --binding SNAPSHOT_KV --remote` |
+| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v4 --binding SNAPSHOT_KV --remote` |
 | secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
 | GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
 | 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import amedasFixture from "../lib/__fixtures__/amedas-points.json";
 import weatherFixture from "../lib/__fixtures__/open-meteo-msm.json";
-import { LAKES } from "../lib/lakes";
+import { CAMERA_CARDS, LAKES, SPOTS } from "../lib/lakes";
 import { SNAPSHOT_KEY, type Snapshot } from "../lib/snapshot/schema";
 import { runSnapshotJob } from "./snapshot-job";
 
@@ -25,7 +25,7 @@ function fakeKv() {
 }
 
 const youtubeBody = {
-  items: LAKES.flatMap((lake) => lake.candidates).map((id) => ({
+  items: CAMERA_CARDS.flatMap((card) => card.candidates).map(({ videoId: id }) => ({
     id,
     snippet: { title: `title ${id}`, channelTitle: "channel", liveBroadcastContent: "live" },
     status: { embeddable: true },
@@ -60,7 +60,8 @@ describe("runSnapshotJob", () => {
     const snapshot = stored();
     expect(snapshot?.lakes.map((lake) => lake.id)).toEqual(LAKES.map((lake) => lake.id));
     expect(snapshot?.lakes.every((lake) => lake.weatherCheckedAt === NOW.toISOString())).toBe(true);
-    expect(snapshot?.lakes.find((lake) => lake.id === "yamanakako")?.camera?.videoId).toBe("F2NbYrc-gBU");
+    expect(snapshot?.lakes.find((lake) => lake.id === "yamanakako")?.cameras[0]?.videoId).toBe("F2NbYrc-gBU");
+    expect(snapshot?.spots.cameras[0]?.videoId).toBe(SPOTS.candidates[0].videoId);
     expect(snapshot?.observations.map((o) => o.id).sort()).toEqual(["49251", "49256"]);
     expect(snapshot?.observationsCheckedAt).toBe(NOW.toISOString());
   });
@@ -70,7 +71,7 @@ describe("runSnapshotJob", () => {
     const { kv, stored } = fakeKv();
     await runSnapshotJob({ SNAPSHOT_KV: kv }, NOW);
     const lake = stored()?.lakes.find((l) => l.id === "kawaguchiko");
-    expect(lake).toMatchObject({ camera: null, cameraCheckedAt: null, weatherCheckedAt: NOW.toISOString() });
+    expect(lake).toMatchObject({ cameras: [], cameraCheckedAt: null, weatherCheckedAt: NOW.toISOString() });
   });
 
   it("does not write when every source fails", async () => {

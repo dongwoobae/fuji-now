@@ -28,14 +28,16 @@ export function classifyCandidate(videoId: string, items: VideoItem[]): Candidat
   return "ended";
 }
 
-export function selectLakeCamera(candidateIds: string[], items: VideoItem[]) {
+export const MAX_CAMERAS = 3;
+
+export function selectCameras(candidateIds: readonly string[], items: VideoItem[]) {
   const candidates = candidateIds.map((videoId) => ({ videoId, status: classifyCandidate(videoId, items) }));
-  const liveId = candidates.find((candidate) => candidate.status === "live")?.videoId;
-  const item = liveId === undefined ? undefined : items.find((candidate) => candidate.id === liveId);
-  const camera: Camera | null = item
-    ? { videoId: item.id, title: item.snippet.title, channelTitle: item.snippet.channelTitle }
-    : null;
-  return { camera, candidates };
+  const cameras: Camera[] = candidates
+    .filter((candidate) => candidate.status === "live")
+    .slice(0, MAX_CAMERAS)
+    .map(({ videoId }) => items.find((item) => item.id === videoId)!)
+    .map((item) => ({ videoId: item.id, title: item.snippet.title, channelTitle: item.snippet.channelTitle }));
+  return { cameras, candidates };
 }
 
 export async function fetchVideos(ids: string[], apiKey: string, signal: AbortSignal): Promise<VideoItem[]> {
