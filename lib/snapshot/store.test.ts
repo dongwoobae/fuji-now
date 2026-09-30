@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { SNAPSHOT_KEY, SNAPSHOT_TTL_SECONDS, type Snapshot } from "./schema";
 import { readSnapshot, writeSnapshot } from "./store";
 
-const snapshot: Snapshot = { writtenAt: "2026-09-29T07:00:00.000Z", sunrise: null, sunset: null, lakes: [] };
+const snapshot: Snapshot = {
+  writtenAt: "2026-09-29T07:00:00.000Z",
+  sunrise: null,
+  sunset: null,
+  lakes: [],
+  observations: [],
+  observationsCheckedAt: null,
+};
 
 function fakeKv(options: { stored?: string; getError?: Error } = {}) {
   const data = new Map<string, string>();

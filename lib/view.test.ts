@@ -11,7 +11,14 @@ const lake = (patch: Partial<LakeSnapshot>): LakeSnapshot => ({
   weatherCheckedAt: "2026-09-29T07:00:00.000Z",
   ...patch,
 });
-const snapshotOf = (lakes: LakeSnapshot[]): Snapshot => ({ writtenAt: "2026-09-29T07:00:00.000Z", sunrise: null, sunset: null, lakes });
+const snapshotOf = (lakes: LakeSnapshot[]): Snapshot => ({
+  writtenAt: "2026-09-29T07:00:00.000Z",
+  sunrise: null,
+  sunset: null,
+  lakes,
+  observations: [],
+  observationsCheckedAt: null,
+});
 
 describe("freshnessOf", () => {
   it("uses the oldest check time across lakes and sources", () => {

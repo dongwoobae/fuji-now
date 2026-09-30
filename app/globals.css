@@ -42,6 +42,9 @@ a { color: inherit; }
 .lake-metrics span { color: #6c858e; font-size: 12px; }
 .lake-metrics strong { margin-top: 6px; font-size: 16px; }
 .lake-metrics small { margin-top: 4px; color: #729098; font-size: 11px; }
+.observed { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; background: #f6f9f9; border-radius: 12px; padding: 10px; font-size: 14px; }
+.observed span { color: #6c858e; font-size: 12px; }
+.observed small { color: #729098; font-size: 11px; }
 .hour-list { display: grid; }
 .hour { display: grid; grid-template-columns: 46px 1fr 40px 52px; gap: 10px; align-items: center; border-top: 1px solid #edf2f2; padding: 6px 0; font-size: 13px; }
 .hour strong, .hour small { text-align: right; }

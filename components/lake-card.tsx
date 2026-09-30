@@ -1,12 +1,14 @@
 import { ExternalLink } from "lucide-react";
-import type { Lake } from "@/lib/lakes";
-import type { LakeSnapshot } from "@/lib/snapshot/schema";
+import { OBSERVATION_STATIONS, type Lake } from "@/lib/lakes";
+import type { LakeSnapshot, Observation } from "@/lib/snapshot/schema";
 import { cameraStateOf, formatJstTime, upcomingHours, windLabel } from "@/lib/view";
 import { LakePlayer } from "./lake-player";
 
-type Props = { lake: Lake; data: LakeSnapshot | null; night: boolean; now: Date };
+type Props = { lake: Lake; data: LakeSnapshot | null; observation: Observation | null; night: boolean; now: Date };
 
-export function LakeCard({ lake, data, night, now }: Props) {
+const mm = (value: number | null) => (value === null ? "—" : `${value}mm`);
+
+export function LakeCard({ lake, data, observation, night, now }: Props) {
   const camera = cameraStateOf(data);
   const weather = data?.weather ?? null;
 
@@ -18,30 +20,42 @@ export function LakeCard({ lake, data, night, now }: Props) {
       </header>
 
       {weather ? (
-        <>
-          <div className="lake-metrics">
-            <div><span>운량</span><strong>{weather.cloudCover}%</strong></div>
-            <div><span>기온</span><strong>{Math.round(weather.temperature)}°</strong></div>
-            <div><span>강수</span><strong>{weather.precipitation}mm</strong></div>
-            <div>
-              <span>바람</span>
-              <strong>{weather.windSpeed.toFixed(1)}m/s</strong>
-              <small>{windLabel(weather.windSpeed)} · 참고</small>
-            </div>
+        <div className="lake-metrics">
+          <div><span>운량</span><strong>{weather.cloudCover}%</strong></div>
+          <div><span>기온</span><strong>{Math.round(weather.temperature)}°</strong></div>
+          <div><span>강수</span><strong>{weather.precipitation}mm</strong><small>예보</small></div>
+          <div>
+            <span>바람</span>
+            <strong>{weather.windSpeed.toFixed(1)}m/s</strong>
+            <small>{windLabel(weather.windSpeed)} · 참고</small>
           </div>
-          <div className="hour-list">
-            {upcomingHours(weather, now).map((hour) => (
-              <div className="hour" key={hour.time}>
-                <span>{formatJstTime(hour.time)}</span>
-                <div className="bar-track"><div className="bar-fill" style={{ width: `${hour.cloudCover}%` }} /></div>
-                <strong>{hour.cloudCover}%</strong>
-                <small>{hour.precipitation}mm</small>
-              </div>
-            ))}
-          </div>
-        </>
+        </div>
       ) : (
         <p className="muted">기상 정보 없음</p>
+      )}
+
+      {observation && (
+        <p className="observed">
+          <span>관측 강수</span>
+          <strong>1시간 {mm(observation.precipitation1h)} · 24시간 {mm(observation.precipitation24h)}</strong>
+          <small>
+            {OBSERVATION_STATIONS.find((station) => station.id === lake.station)?.name} 관측소 ·{" "}
+            {formatJstTime(observation.observedAt)} 기준
+          </small>
+        </p>
+      )}
+
+      {weather && (
+        <div className="hour-list">
+          {upcomingHours(weather, now).map((hour) => (
+            <div className="hour" key={hour.time}>
+              <span>{formatJstTime(hour.time)}</span>
+              <div className="bar-track"><div className="bar-fill" style={{ width: `${hour.cloudCover}%` }} /></div>
+              <strong>{hour.cloudCover}%</strong>
+              <small>{hour.precipitation}mm</small>
+            </div>
+          ))}
+        </div>
       )}
 
       {camera.kind === "live" ? (

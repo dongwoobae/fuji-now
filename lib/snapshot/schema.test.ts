@@ -15,6 +15,10 @@ const valid: Snapshot = {
       weatherCheckedAt: null,
     },
   ],
+  observations: [
+    { id: "49251", observedAt: "2026-09-29T15:50:00+09:00", precipitation1h: 0.5, precipitation24h: null },
+  ],
+  observationsCheckedAt: "2026-09-29T07:00:00.000Z",
 };
 
 describe("parseSnapshot", () => {
@@ -32,6 +36,13 @@ describe("parseSnapshot", () => {
 
   it("returns null for an unknown lake id", () => {
     expect(parseSnapshot({ ...valid, lakes: [{ ...valid.lakes[0], id: "biwako" }] })).toBeNull();
+  });
+
+  it("returns null for a snapshot written before observations existed", () => {
+    const previousShape: Record<string, unknown> = { ...valid };
+    delete previousShape.observations;
+    delete previousShape.observationsCheckedAt;
+    expect(parseSnapshot(previousShape)).toBeNull();
   });
 
   it("accepts null sunrise and sunset", () => {
