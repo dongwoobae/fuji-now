@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { LAKE_IDS } from "../lakes";
 
-export const SNAPSHOT_KEY = "snapshot:v3";
+export const SNAPSHOT_KEY = "snapshot:v4";
 export const SNAPSHOT_TTL_SECONDS = 24 * 60 * 60;
 // 한쪽 호출만 계속 실패하면 다른 쪽의 쓰기가 KV 만료를 계속 연장한다. 이어받기를 여기서 끊어야 옛 값이 사라진다.
 export const CARRY_MAX_MS = 60 * 60 * 1000;
@@ -30,11 +30,14 @@ const observationSchema = z.object({
   precipitation24h: z.number().nullable(),
 });
 
-const lakeSnapshotSchema = z.object({
-  id: z.enum(LAKE_IDS),
-  camera: cameraSchema.nullable(),
+const cameraPartSchema = z.object({
+  cameras: z.array(cameraSchema),
   candidates: z.array(z.object({ videoId: z.string(), status: candidateStatusSchema })),
   cameraCheckedAt: z.string().nullable(),
+});
+
+const lakeSnapshotSchema = cameraPartSchema.extend({
+  id: z.enum(LAKE_IDS),
   weather: lakeWeatherSchema.nullable(),
   weatherCheckedAt: z.string().nullable(),
 });
@@ -46,10 +49,12 @@ const snapshotSchema = z.object({
   lakes: z.array(lakeSnapshotSchema),
   observations: z.array(observationSchema),
   observationsCheckedAt: z.string().nullable(),
+  spots: cameraPartSchema,
 });
 
 export type CandidateStatus = z.infer<typeof candidateStatusSchema>;
 export type Camera = z.infer<typeof cameraSchema>;
+export type CameraPart = z.infer<typeof cameraPartSchema>;
 export type LakeWeather = z.infer<typeof lakeWeatherSchema>;
 export type Observation = z.infer<typeof observationSchema>;
 export type LakeSnapshot = z.infer<typeof lakeSnapshotSchema>;

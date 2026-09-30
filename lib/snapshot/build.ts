@@ -1,12 +1,13 @@
-import { SUN_REFERENCE_LAKE, type Lake } from "../lakes";
+import { SUN_REFERENCE_LAKE, type CameraCard, type Lake } from "../lakes";
 import type { WeatherResult } from "../weather";
-import { selectLakeCamera, type VideoItem } from "../youtube";
-import { CARRY_MAX_MS, type LakeSnapshot, type Observation, type Snapshot } from "./schema";
+import { selectCameras, type VideoItem } from "../youtube";
+import { CARRY_MAX_MS, type CameraPart, type LakeSnapshot, type Observation, type Snapshot } from "./schema";
 
 export type SourceResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 type BuildInput = {
   lakes: readonly Lake[];
+  spots: CameraCard;
   previous: Snapshot | null;
   videos: SourceResult<VideoItem[]>;
   weather: SourceResult<WeatherResult>;
@@ -14,23 +15,24 @@ type BuildInput = {
   now: Date;
 };
 
-export function buildSnapshot({ lakes, previous, videos, weather, observations, now }: BuildInput): Snapshot | null {
+export function buildSnapshot({ lakes, spots, previous, videos, weather, observations, now }: BuildInput): Snapshot | null {
   if (!videos.ok && !weather.ok && !observations.ok) return null;
   const nowIso = now.toISOString();
   const carryable = (checkedAt: string | null): checkedAt is string =>
     checkedAt !== null && now.getTime() - Date.parse(checkedAt) <= CARRY_MAX_MS;
 
+  const cameraPartOf = (card: CameraCard, prev: CameraPart | null): CameraPart => {
+    if (videos.ok) {
+      return { ...selectCameras(card.candidates.map((candidate) => candidate.videoId), videos.value), cameraCheckedAt: nowIso };
+    }
+    if (prev && carryable(prev.cameraCheckedAt)) {
+      return { cameras: prev.cameras, candidates: prev.candidates, cameraCheckedAt: prev.cameraCheckedAt };
+    }
+    return { cameras: [], candidates: [], cameraCheckedAt: null };
+  };
+
   const lakeSnapshots = lakes.map((lake): LakeSnapshot => {
     const prev = previous?.lakes.find((candidate) => candidate.id === lake.id) ?? null;
-
-    let cameraPart: Pick<LakeSnapshot, "camera" | "candidates" | "cameraCheckedAt">;
-    if (videos.ok) {
-      cameraPart = { ...selectLakeCamera(lake.candidates, videos.value), cameraCheckedAt: nowIso };
-    } else if (prev && carryable(prev.cameraCheckedAt)) {
-      cameraPart = { camera: prev.camera, candidates: prev.candidates, cameraCheckedAt: prev.cameraCheckedAt };
-    } else {
-      cameraPart = { camera: null, candidates: [], cameraCheckedAt: null };
-    }
 
     let weatherPart: Pick<LakeSnapshot, "weather" | "weatherCheckedAt">;
     if (weather.ok) {
@@ -41,7 +43,7 @@ export function buildSnapshot({ lakes, previous, videos, weather, observations, 
       weatherPart = { weather: null, weatherCheckedAt: null };
     }
 
-    return { id: lake.id, ...cameraPart, ...weatherPart };
+    return { id: lake.id, ...cameraPartOf(lake, prev), ...weatherPart };
   });
 
   let sun: Pick<Snapshot, "sunrise" | "sunset">;
@@ -64,5 +66,5 @@ export function buildSnapshot({ lakes, previous, videos, weather, observations, 
     observed = { observations: [], observationsCheckedAt: null };
   }
 
-  return { writtenAt: nowIso, ...sun, lakes: lakeSnapshots, ...observed };
+  return { writtenAt: nowIso, ...sun, lakes: lakeSnapshots, ...observed, spots: cameraPartOf(spots, previous?.spots ?? null) };
 }

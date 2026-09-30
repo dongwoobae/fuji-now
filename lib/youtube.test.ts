@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fixture from "./__fixtures__/youtube-videos.json";
-import { classifyCandidate, fetchVideos, parseVideosResponse, selectLakeCamera, type VideoItem } from "./youtube";
+import { classifyCandidate, fetchVideos, parseVideosResponse, selectCameras, type VideoItem } from "./youtube";
 
 const items = parseVideosResponse(fixture);
 const base = items[0];
@@ -42,14 +42,14 @@ describe("classifyCandidate", () => {
   });
 });
 
-describe("selectLakeCamera", () => {
-  it("picks the first live candidate in priority order", () => {
-    const result = selectLakeCamera(["first", "second", "third"], [
+describe("selectCameras", () => {
+  it("picks live candidates in priority order", () => {
+    const result = selectCameras(["first", "second", "third"], [
       video("first", "none"),
       video("second", "live"),
       video("third", "live"),
     ]);
-    expect(result.camera?.videoId).toBe("second");
+    expect(result.cameras.map((camera) => camera.videoId)).toEqual(["second", "third"]);
     expect(result.candidates).toEqual([
       { videoId: "first", status: "ended" },
       { videoId: "second", status: "live" },
@@ -57,26 +57,32 @@ describe("selectLakeCamera", () => {
     ]);
   });
 
+  it("keeps at most three cameras and lets the next candidate move up", () => {
+    const ids = ["a", "b", "c", "d", "e"];
+    const allLive = ids.map((id) => video(id, "live"));
+    expect(selectCameras(ids, allLive).cameras.map((camera) => camera.videoId)).toEqual(["a", "b", "c"]);
+    const cOff = allLive.map((item) => (item.id === "c" ? video("c", "none") : item));
+    expect(selectCameras(ids, cOff).cameras.map((camera) => camera.videoId)).toEqual(["a", "b", "d"]);
+  });
+
   it("returns to the first candidate once it is live again", () => {
-    const result = selectLakeCamera(["first", "second"], [video("first", "live"), video("second", "live")]);
-    expect(result.camera?.videoId).toBe("first");
+    const result = selectCameras(["first", "second"], [video("first", "live"), video("second", "live")]);
+    expect(result.cameras[0].videoId).toBe("first");
   });
 
   it("copies title and channel of the chosen video", () => {
     const chosen = video("first", "live");
-    expect(selectLakeCamera(["first"], [chosen]).camera).toEqual({
-      videoId: "first",
-      title: chosen.snippet.title,
-      channelTitle: chosen.snippet.channelTitle,
-    });
+    expect(selectCameras(["first"], [chosen]).cameras).toEqual([
+      { videoId: "first", title: chosen.snippet.title, channelTitle: chosen.snippet.channelTitle },
+    ]);
   });
 
-  it("has no camera when nothing is live", () => {
-    expect(selectLakeCamera(["first"], [video("first", "none")]).camera).toBeNull();
+  it("has no cameras when nothing is live", () => {
+    expect(selectCameras(["first"], [video("first", "none")]).cameras).toEqual([]);
   });
 
-  it("has no camera and no candidates for a lake without candidates", () => {
-    expect(selectLakeCamera([], items)).toEqual({ camera: null, candidates: [] });
+  it("has no cameras and no candidates for a card without candidates", () => {
+    expect(selectCameras([], items)).toEqual({ cameras: [], candidates: [] });
   });
 });
 

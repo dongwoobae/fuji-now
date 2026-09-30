@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { ExternalLink, Mountain } from "lucide-react";
 import { Freshness } from "@/components/freshness";
 import { LakeCard } from "@/components/lake-card";
+import { SpotCard } from "@/components/spot-card";
 import { LAKES } from "@/lib/lakes";
 import { readSnapshot } from "@/lib/snapshot/store";
 import { cameraStateOf, formatJstTime, freshnessOf, isNight } from "@/lib/view";
@@ -87,6 +88,7 @@ export default async function Home() {
                 now={now}
               />
             ))}
+            <SpotCard part={snapshot.spots} night={night} />
           </div>
         </>
       )}

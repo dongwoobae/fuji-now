@@ -1,5 +1,5 @@
 import { fetchObservations } from "../lib/amedas";
-import { LAKES, OBSERVATION_STATIONS, SUN_REFERENCE_LAKE } from "../lib/lakes";
+import { CAMERA_CARDS, LAKES, OBSERVATION_STATIONS, SPOTS, SUN_REFERENCE_LAKE } from "../lib/lakes";
 import { buildSnapshot, type SourceResult } from "../lib/snapshot/build";
 import { readSnapshot, writeSnapshot } from "../lib/snapshot/store";
 import { fetchWeather } from "../lib/weather";
@@ -19,7 +19,7 @@ async function settle<T>(run: () => Promise<T>): Promise<SourceResult<T>> {
 
 export async function runSnapshotJob(env: JobEnv, now: Date): Promise<void> {
   const previous = await readSnapshot(env.SNAPSHOT_KV);
-  const ids = LAKES.flatMap((lake) => lake.candidates);
+  const ids = CAMERA_CARDS.flatMap((card) => card.candidates.map((candidate) => candidate.videoId));
   const apiKey = env.YOUTUBE_API_KEY;
 
   const [videos, weather, observations] = await Promise.all([
@@ -31,10 +31,10 @@ export async function runSnapshotJob(env: JobEnv, now: Date): Promise<void> {
     settle(() => fetchObservations(OBSERVATION_STATIONS.map((station) => station.id), AbortSignal.timeout(CALL_TIMEOUT_MS))),
   ]);
 
-  const snapshot = buildSnapshot({ lakes: LAKES, previous, videos, weather, observations, now });
+  const snapshot = buildSnapshot({ lakes: LAKES, spots: SPOTS, previous, videos, weather, observations, now });
   if (snapshot) await writeSnapshot(env.SNAPSHOT_KV, snapshot);
 
-  const candidates = snapshot?.lakes.flatMap((lake) => lake.candidates) ?? [];
+  const candidates = snapshot ? [...snapshot.lakes, snapshot.spots].flatMap((part) => part.candidates) : [];
   console.log(
     JSON.stringify({
       event: "snapshot",
