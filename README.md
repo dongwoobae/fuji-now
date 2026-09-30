@@ -22,11 +22,13 @@ pnpm build
 pnpm start        # 빌드 결과를 로컬 wrangler로 실행 (http://127.0.0.1:8799)
 pnpm typecheck
 pnpm lint
+pnpm test
 ```
 
 - 서버 비밀값(API 키)은 `.env.local`에 두고 커밋하지 않는다. `.gitignore`가 `.env*`를 제외한다. 로컬 wrangler는 `.dev.vars`가 없으면 `.env`와 `.env.local`을 읽는다.
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
 - 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
+- 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
 
 ## 배포
 
