@@ -47,6 +47,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `lib/youtube.ts`, `lib/weather.ts` | 외부 API 호출과 응답 검사 |
 | `lib/view.ts` | 화면 표시 계산 |
 | `app/page.tsx`, `components/` | 화면 |
+| `app/privacy/page.tsx` | 개인정보처리방침 |
 | `docs/specs/` | 설계 문서 |
 
 ## 외부 데이터 이용 시 주의

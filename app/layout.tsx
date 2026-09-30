@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body className="antialiased">
-        <div className="shell">{children}</div>
+        <div className="shell">
+          {children}
+          <SiteFooter />
+        </div>
       </body>
     </html>
   );
