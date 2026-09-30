@@ -8,15 +8,8 @@
 
 - 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fuji-now.dongwoobae.workers.dev
 - 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
-- 지금 코드에 있는 기능
-  - 가와구치코 좌표의 현재 기상과 앞으로의 운량 (Open-Meteo)
-  - 카메라 운영 사이트로 가는 원본 링크
-
-## 진행 중인 방향
-
-- 후지 5호별 YouTube 라이브 카메라와 호수별 기상(기상청 MSM 모델, Open-Meteo 제공)을 보여준다.
-- 라이브가 끝나거나 재시작된 경우를 가려내기 위해, 서버가 YouTube Data API로 방송 여부를 주기적으로 확인한다.
-- 카메라 영상 AI 분석은 제공자의 허가를 받은 뒤에 다시 검토한다.
+- 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다.
+- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상을 받아 KV 스냅샷 하나(`snapshot:v1`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 
 ## 로컬 실행
 
@@ -46,10 +39,15 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 | 경로 | 내용 |
 |---|---|
-| `worker/index.ts` | 워커 진입점 |
-| `wrangler.jsonc` | 워커 이름·계정·진입점 설정 |
-| `app/page.tsx` | 메인 화면 |
-| `app/api/weather` | Open-Meteo 기상 조회 |
+| `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
+| `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
+| `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업 설정 |
+| `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크) |
+| `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
+| `lib/youtube.ts`, `lib/weather.ts` | 외부 API 호출과 응답 검사 |
+| `lib/view.ts` | 화면 표시 계산 |
+| `app/page.tsx`, `components/` | 화면 |
+| `docs/specs/` | 설계 문서 |
 
 ## 외부 데이터 이용 시 주의
 
