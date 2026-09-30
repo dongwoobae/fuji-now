@@ -4,17 +4,19 @@ export const STALE_AFTER_MS = 20 * 60 * 1000;
 export const CALM_WIND_MAX_MS = 1.2;
 export const OUTLOOK_HOURS = 8;
 
-export type Freshness = { kind: "partial" } | { kind: "checked"; at: string };
+export type Freshness = { kind: "partial"; at: string | null } | { kind: "checked"; at: string };
 
 export function freshnessOf(snapshot: Snapshot): Freshness {
   let oldest: string | null = null;
+  let partial = false;
   for (const lake of snapshot.lakes) {
     for (const at of [lake.cameraCheckedAt, lake.weatherCheckedAt]) {
-      if (at === null) return { kind: "partial" };
-      if (oldest === null || Date.parse(at) < Date.parse(oldest)) oldest = at;
+      if (at === null) partial = true;
+      else if (oldest === null || Date.parse(at) < Date.parse(oldest)) oldest = at;
     }
   }
-  return oldest === null ? { kind: "partial" } : { kind: "checked", at: oldest };
+  if (partial || oldest === null) return { kind: "partial", at: oldest };
+  return { kind: "checked", at: oldest };
 }
 
 export function isStale(at: string, nowMs: number): boolean {

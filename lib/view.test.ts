@@ -23,7 +23,22 @@ describe("freshnessOf", () => {
   });
 
   it("is partial when any check time is missing", () => {
-    expect(freshnessOf(snapshotOf([lake({}), lake({ id: "saiko", cameraCheckedAt: null })]))).toEqual({ kind: "partial" });
+    expect(freshnessOf(snapshotOf([lake({}), lake({ id: "saiko", cameraCheckedAt: null })]))).toEqual({
+      kind: "partial",
+      at: "2026-09-29T07:00:00.000Z",
+    });
+  });
+
+  it("keeps the oldest known time while partial", () => {
+    const snapshot = snapshotOf([
+      lake({ cameraCheckedAt: null, weatherCheckedAt: "2026-09-29T06:30:00.000Z" }),
+      lake({ id: "saiko", weatherCheckedAt: "2026-09-29T06:50:00.000Z" }),
+    ]);
+    expect(freshnessOf(snapshot)).toEqual({ kind: "partial", at: "2026-09-29T06:30:00.000Z" });
+  });
+
+  it("is partial with no time when nothing was checked", () => {
+    expect(freshnessOf(snapshotOf([lake({ cameraCheckedAt: null, weatherCheckedAt: null })]))).toEqual({ kind: "partial", at: null });
   });
 });
 

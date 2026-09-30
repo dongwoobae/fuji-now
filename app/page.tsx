@@ -24,7 +24,7 @@ export default async function Home() {
           <span className="brand-mark"><Mountain size={23} strokeWidth={1.8} aria-hidden /></span>
           <div><strong>FUJI NOW</strong><small>후지 5호 라이브</small></div>
         </div>
-        {freshness && <Freshness at={freshness.kind === "checked" ? freshness.at : null} />}
+        {freshness && <Freshness at={freshness.at} partial={freshness.kind === "partial"} />}
       </header>
 
       <section className="intro">
