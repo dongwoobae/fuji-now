@@ -82,7 +82,7 @@ describe("upcomingHours", () => {
   it("drops past hours and keeps at most eight", () => {
     const hourly = Array.from({ length: 10 }, (_, i) => ({
       time: `2026-09-29T${String(14 + i).padStart(2, "0")}:00:00+09:00`,
-      cloudCover: i,
+      lowCloudCover: i,
       precipitation: 0,
     }));
     const weather = { time: hourly[0].time, temperature: 10, cloudCover: 0, precipitation: 0, windSpeed: 1, hourly };

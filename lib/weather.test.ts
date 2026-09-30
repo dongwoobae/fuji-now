@@ -19,6 +19,7 @@ describe("buildWeatherUrl", () => {
     expect(url.searchParams.get("wind_speed_unit")).toBe("ms");
     expect(url.searchParams.get("timezone")).toBe("Asia/Tokyo");
     expect(url.searchParams.get("daily")).toBe("sunrise,sunset");
+    expect(url.searchParams.get("hourly")).toBe("cloud_cover_low,precipitation");
   });
 });
 
@@ -36,7 +37,7 @@ describe("parseWeatherResponse", () => {
       expect(weather.hourly).toHaveLength(location.hourly.time.length);
       expect(weather.hourly[0]).toEqual({
         time: toJstIso(location.hourly.time[0]),
-        cloudCover: location.hourly.cloud_cover[0],
+        lowCloudCover: location.hourly.cloud_cover_low[0],
         precipitation: location.hourly.precipitation[0],
       });
     });
