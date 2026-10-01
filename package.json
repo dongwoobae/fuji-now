@@ -19,7 +19,9 @@
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
     "db:studio": "drizzle-kit studio",
     "backfill": "tsx scripts/backfill.ts",
-    "stats:refresh": "tsx scripts/stats-refresh.ts"
+    "stats:refresh": "tsx scripts/stats-refresh.ts",
+    "calibrate": "tsx scripts/calibrate.ts",
+    "regrade": "tsx scripts/regrade.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

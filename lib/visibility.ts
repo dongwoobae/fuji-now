@@ -20,14 +20,16 @@ export const GRADE_DESCRIPTION: Record<VisibilityGrade, string> = {
 
 export type CloudLayers = { low: number; mid: number; high: number };
 
-// 처음 정한 기준값이다. 사람 실측이 쌓이면 같은 시각의 모델 추정과 비교해 고친다. 원시 운량을 DB에 남기므로 바꿔도 과거를 다시 계산할 수 있다.
+// obscuredCover(알아볼 수 있는지의 경계)는 2026-10-01 pnpm calibrate로 정했다. 2018-08~2026-09 MSM으로 월별 "보인 날" 비율을
+// 북쪽 참고 곡선과 비교해 가장 가까운 값(20, 평균 차이 9%p)이다. 나머지 경계는 그에 맞춰 비례로 좁힌 값이고 보정하지 않았다.
+// 사람 실측이 쌓이면 다시 맞춘다. 기준을 바꾸면 pnpm regrade로 DB의 과거 등급을 다시 계산한다.
 export const GRADE_RULES = {
-  badCover: 85,
+  badCover: 60,
   badPrecipitation: 1,
-  obscuredCover: 60,
+  obscuredCover: 20,
   obscuredPrecipitation: 0.5,
-  cloudyCover: 30,
-  clearCover: 10,
+  cloudyCover: 10,
+  clearCover: 3,
   clearHighCover: 60,
 } as const;
 
