@@ -27,7 +27,7 @@ export async function runSnapshotJob(env: JobEnv, now: Date): Promise<void> {
       if (!apiKey) throw new Error("YOUTUBE_API_KEY is not set");
       return fetchVideos(ids, apiKey, AbortSignal.timeout(CALL_TIMEOUT_MS));
     }),
-    settle(() => fetchWeather(LAKES, SUN_REFERENCE_LAKE, AbortSignal.timeout(CALL_TIMEOUT_MS))),
+    settle(() => fetchWeather(SUN_REFERENCE_LAKE, AbortSignal.timeout(CALL_TIMEOUT_MS))),
     settle(() => fetchObservations(OBSERVATION_STATIONS.map((station) => station.id), AbortSignal.timeout(CALL_TIMEOUT_MS))),
   ]);
 

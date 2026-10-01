@@ -2,6 +2,7 @@ import { OBSERVATION_STATIONS, type Lake } from "@/lib/lakes";
 import type { LakeSnapshot, Observation } from "@/lib/snapshot/schema";
 import { formatJstTime, upcomingHours, windLabel } from "@/lib/view";
 import { CameraSlot } from "./camera-slot";
+import { GradeChip } from "./grade-chip";
 
 type Props = { lake: Lake; data: LakeSnapshot | null; observation: Observation | null; night: boolean; now: Date };
 
@@ -50,6 +51,7 @@ export function LakeCard({ lake, data, observation, night, now }: Props) {
             <span>하층 운량 (예보)</span>
             <span />
             <span>강수</span>
+            <span>전망</span>
           </div>
           {upcomingHours(weather, now).map((hour) => (
             <div className="hour" key={hour.time}>
@@ -57,6 +59,7 @@ export function LakeCard({ lake, data, observation, night, now }: Props) {
               <div className="bar-track"><div className="bar-fill" style={{ width: `${hour.lowCloudCover}%` }} /></div>
               <strong>{hour.lowCloudCover}%</strong>
               <small>{hour.precipitation}mm</small>
+              <GradeChip grade={hour.grade} daylight={hour.daylight} />
             </div>
           ))}
         </div>

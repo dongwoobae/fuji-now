@@ -38,6 +38,10 @@ export function upcomingHours(weather: LakeWeather, now: Date): LakeWeather["hou
   return weather.hourly.filter((hour) => Date.parse(hour.time) >= hourStart).slice(0, OUTLOOK_HOURS);
 }
 
+export function currentHour(weather: LakeWeather, now: Date): LakeWeather["hourly"][number] | null {
+  return upcomingHours(weather, now)[0] ?? null;
+}
+
 export type CameraState = { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; cameras: Camera[] };
 
 export function cameraStateOf(part: CameraPart | null): CameraState {
