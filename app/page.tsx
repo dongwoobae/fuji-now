@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { ExternalLink, Mountain } from "lucide-react";
+import Link from "next/link";
 import { Freshness } from "@/components/freshness";
 import { GradeChip } from "@/components/grade-chip";
 import { LakeCard } from "@/components/lake-card";
@@ -50,6 +51,7 @@ export default async function Home() {
             ))}
           </dl>
         </details>
+        <p className="stats-link"><Link href="/stats">월별로 얼마나 보였는지 통계 보기 →</Link></p>
         {snapshot?.sunrise && snapshot.sunset && (
           <p className="sun">
             일출 {formatJstTime(snapshot.sunrise)} · 일몰 {formatJstTime(snapshot.sunset)} <span>(가와구치코 기준)</span>
