@@ -107,7 +107,7 @@ export function formatCalibration(lines: readonly CalibrationLine[]): string {
     ...(Object.entries(DAY_RULES) as [DayRule, string][]).map(([rule, text]) => `${rule.padEnd(8)}: 보인 날 = 알아볼 수 있는 시각이 ${text}`),
     `${"ref".padEnd(8)}: 북쪽(가와구치코) 참고 곡선(isfujivisible.com)`,
     `${"diff".padEnd(8)}: 참고와의 평균 절대 차이(%p). 차이가 작은 순으로 정렬`,
-    "지금 기준은 cover<60 + any1이다",
+    `지금 기준은 cover<${GRADE_RULES.obscuredCover} + any1이다`,
   ];
   return [header, reference, ...body, ...legend].join("\n");
 }
