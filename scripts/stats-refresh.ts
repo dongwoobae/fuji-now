@@ -1,29 +1,21 @@
-// 월별 통계를 지금 바로 다시 집계해 운영 KV(stats:v1)에 넣는다. 예약 작업은 하루 한 번만 집계하므로,
+// 월별 통계를 지금 바로 다시 집계해 운영 KV(lib/stats.ts의 STATS_KEY)에 넣는다. 예약 작업은 하루 한 번만 집계하므로,
 // 백필이나 등급 기준을 바꾼 직후에 쓴다. 로컬에서 실행한다.
 // 실행: pnpm stats:refresh   (.env.local의 DATABASE_URL, wrangler 로그인 필요)
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createDb } from "../lib/db/client";
+import { createDb, describeError } from "../lib/db/client";
 import { computeStats } from "../lib/db/stats";
 import { STATS_KEY, STATS_TTL_SECONDS, sumCounts, visibleShare } from "../lib/stats";
+import { requireDatabaseUrl } from "./env";
 
-try {
-  process.loadEnvFile(".env.local");
-} catch {}
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("[stats] DATABASE_URL이 없다 (.env.local)");
-  process.exit(1);
-}
+const databaseUrl = requireDatabaseUrl("stats");
 
 let stats;
 try {
   stats = await computeStats(createDb(databaseUrl), new Date());
 } catch (error) {
-  const cause = error instanceof Error && error.cause instanceof Error ? error.cause.message : null;
-  console.error(`[stats] 집계 실패: ${cause ?? (error instanceof Error ? error.message.slice(0, 300) : String(error))}`);
+  console.error(`[stats] 집계 실패: ${describeError(error)}`);
   process.exit(1);
 }
 

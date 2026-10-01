@@ -4,7 +4,9 @@ export const BACKFILL_FROM = "2018-08-01";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function isIsoDate(value: string): boolean {
-  return DATE.test(value) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
+  if (!DATE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
 }
 
 // 일본 날짜로 어제. 오늘은 아직 끝나지 않았고 매시 기록이 채운다.

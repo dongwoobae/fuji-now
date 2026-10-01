@@ -11,7 +11,7 @@
 - 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 하층 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다. 방송 중인 카메라가 여럿이면 최대 3대까지 번호로 골라 본다. 여섯 번째 명소 카드는 주레이토 5층탑 같은 호수 밖 전망 명소 카메라다.
 - 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v5`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 - 시각마다 후지산이 보이는 정도를 5단계(완벽·잘 보임·구름 걸림·거의 가려짐·안 보임)로 추정해 보여준다. 호수와 정상 격자의 하층·중층·상층 운량과 강수로 매긴다. 단계 이름은 FujiView 연구를 따랐다.
-- 매시 정각에 MSM 값과 리드타임별 예보를 Neon Postgres에 쌓는다. 나중에 월별 통계("8월은 안 보이는 날이 절반 이상")를 내기 위해서다. 2018-08부터의 과거 값은 `pnpm backfill`로 채운다.
+- 매시 1분에 그 시각의 MSM 값과 리드타임별 예보를 Neon Postgres에 쌓는다. 나중에 월별 통계("8월은 안 보이는 날이 절반 이상")를 내기 위해서다. 2018-08부터의 과거 값은 `pnpm backfill`로 채운다.
 - `/stats`에서 월 × 호수별로 "보인 날" 비율과 5단계 비율을 본다. 하루 한 번 Neon에서 집계해 KV(`stats:v1`)에 넣고, 페이지는 그 키만 읽는다.
 - 운영자가 눈으로 본 후지산을 `/report`에 남긴다. 같은 시간대에 실측이 있으면 통계는 모델 추정 대신 실측을 쓴다.
 
@@ -38,8 +38,8 @@ pnpm test
 - 통계를 바로 다시 집계하려면 `pnpm stats:refresh`를 실행한다. `.env.local`의 `DATABASE_URL`로 Neon에서 집계해 운영 KV에 바로 쓰고, 월별 "5호 전체" 보인 날 비율을 터미널에 출력한다. wrangler 로그인이 필요하다.
 - 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다.
 - 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
-- Open-Meteo 요청 형식을 바꾸면 `node scripts/capture-open-meteo-fixture.mjs`로 테스트 데이터를 다시 받는다. 지금 파일의 일부는 임시 값이다(`lib/__fixtures__/README.md`).
-- 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
+- Open-Meteo 요청 형식을 바꾸면 `pnpm exec tsx scripts/capture-open-meteo-fixture.ts`로 테스트 데이터를 다시 받는다(`lib/__fixtures__/README.md`).
+- 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 기록·통계 작업은 `cron=1+*+*+*+*`로 부른다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
 
 ## 배포
 
@@ -70,7 +70,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | secret `REPORT_CODE` | 길고 무작위인 문자열(예: `openssl rand -base64 32`)을 `wrangler secret put REPORT_CODE`로 넣는다. 바꾸면 기존 로그인이 모두 풀린다 | `/report`에서 로그인 |
 | secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
 | GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
-| 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
+| 예약 작업 `*/5 * * * *`(스냅샷), `1 * * * *`(기록·통계) | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다. 계정당 5개 한도를 다른 워커와 함께 쓴다 | `pnpm exec wrangler tail fuji-now` |
 
 `wrangler.jsonc`에서 바인딩을 지워도 실제 자원은 남는다. 사이트를 내릴 때는 아래 순서로 지운다.
 
@@ -85,10 +85,10 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | 경로 | 내용 |
 |---|---|
 | `.github/workflows/ci.yml` | PR·main 검사와 main 배포 |
-| `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
+| `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 cron에 따라 스냅샷 또는 기록·통계 작업 |
 | `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
-| `worker/record-job.ts` | 매시 첫 실행: 73시간 예보 조회 → Neon에 기록 |
-| `lib/visibility.ts` | 5단계 등급 정의·기준값·실측 우선 규칙 |
+| `worker/record-job.ts` | 매시 1분 실행: 73시간 예보 조회 → Neon에 기록 |
+| `lib/visibility.ts` | 5단계 등급 정의·기준값 |
 | `lib/record.ts` | 예보 응답을 기록 행으로 나누기 |
 | `lib/db/`, `drizzle/`, `drizzle.config.ts` | Neon 스키마·클라이언트·쿼리, 마이그레이션 |
 | `lib/report.ts`, `app/report/` | 실측 기록 페이지(운영자 전용)와 입력 검사·쿠키 확인 |

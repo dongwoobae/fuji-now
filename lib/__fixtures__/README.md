@@ -2,4 +2,4 @@
 
 외부 API의 실제 응답을 저장해서 쓴다. 형식을 추측해서 만들지 않는다(설계 문서 "테스트" 절).
 
-- `open-meteo-msm.json`: `node scripts/capture-open-meteo-fixture.mjs`로 받는다. 요청 형식(지점, 변수, 시간 수)을 바꾸면 다시 받는다. 테스트는 기대값을 파일 내용에서 계산하므로 다시 받아도 그대로 돈다. 마지막으로 받은 날은 2026-10-01이다.
+- `open-meteo-msm.json`: `pnpm exec tsx scripts/capture-open-meteo-fixture.ts`로 받는다. 요청 형식(지점, 변수, 시간 수)을 바꾸면 다시 받는다. 테스트는 기대값을 파일 내용에서 계산하므로 다시 받아도 그대로 돈다. 마지막으로 받은 날은 2026-10-01이다.

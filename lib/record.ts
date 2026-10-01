@@ -29,7 +29,7 @@ function valuesOf(point: string, hour: GradedHour, fetchedAt: Date): HourValues 
   };
 }
 
-// 정각에 받은 응답에서 리드 0(이번 시각)은 weather_hourly로, RECORD_LEADS에 있는 리드는 forecast로 나눈다.
+// 매시 받은 응답에서 리드 0(이번 정각)은 weather_hourly로, RECORD_LEADS에 있는 리드는 forecast로 나눈다.
 export function buildRecordRows(forecasts: readonly PointForecast[], now: Date): RecordRows {
   const base = hourStartOf(now).getTime();
   const rows: RecordRows = { actual: [], forecasts: [] };

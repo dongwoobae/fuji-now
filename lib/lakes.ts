@@ -106,9 +106,8 @@ export const CAMERA_CARDS: readonly CameraCard[] = [...LAKES, SPOTS];
 
 export const SUN_REFERENCE_LAKE: LakeId = "kawaguchiko";
 
-// 정상 격자의 구름으로 산꼭대기가 가려지는지 본다. MSM 최근접 격자는 (35.35, 138.75)라 좌표 대조 기준(0.03°) 안에 든다.
+// 정상 격자의 구름으로 산꼭대기가 가려지는지 본다. MSM 최근접 격자는 (35.35, 138.75)라 좌표 대조 기준(lib/weather.ts의 COORDINATE_TOLERANCE) 안에 든다.
 export const SUMMIT = { id: "summit", latitude: 35.3606, longitude: 138.7274 } as const;
 export type PointId = LakeId | typeof SUMMIT.id;
-export const POINT_IDS = [...LAKE_IDS, SUMMIT.id] as const;
 export type ForecastPoint = { id: PointId; latitude: number; longitude: number };
 export const FORECAST_POINTS: readonly ForecastPoint[] = [...LAKES, SUMMIT];

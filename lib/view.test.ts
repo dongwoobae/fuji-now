@@ -102,6 +102,12 @@ describe("currentHour", () => {
     expect(currentHour(weather, new Date("2026-09-29T15:59:00+09:00"))?.time).toBe("2026-09-29T15:00:00+09:00");
     expect(currentHour(weather, new Date("2026-09-29T16:00:00+09:00"))).toBeNull();
   });
+
+  it("does not stand in the next hour for a missing current hour", () => {
+    const hour = (time: string) => ({ time, lowCloudCover: 0, precipitation: 0, grade: "clear" as const, daylight: true });
+    const weather = { time: "", temperature: 10, cloudCover: 0, precipitation: 0, windSpeed: 1, hourly: [hour("2026-09-29T16:00:00+09:00")] };
+    expect(currentHour(weather, new Date("2026-09-29T15:30:00+09:00"))).toBeNull();
+  });
 });
 
 describe("cameraStateOf", () => {
