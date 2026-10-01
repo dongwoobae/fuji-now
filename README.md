@@ -33,6 +33,7 @@ pnpm test
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
 - 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
 - Neon 연결 문자열은 `.env.local`의 `DATABASE_URL`에 둔다. 스키마를 고치면 `pnpm db:generate`로 `drizzle/`에 마이그레이션을 만들고, `pnpm db:migrate`로 적용한다. main에 병합하면 CI가 배포 직전에 적용한다.
+- 등급 기준값과 "보인 날" 규칙을 고를 때는 `pnpm calibrate`를 실행한다. 후보 조합마다 월별 보인 날 비율과 참고 곡선과의 차이를 표로 출력한다(DB를 바꾸지 않는다).
 - 통계를 바로 다시 집계하려면 `pnpm stats:refresh`를 실행한다. `.env.local`의 `DATABASE_URL`로 Neon에서 집계해 운영 KV에 바로 쓰고, 월별 "5호 전체" 보인 날 비율을 터미널에 출력한다. wrangler 로그인이 필요하다.
 - 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다.
 - 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
@@ -92,7 +93,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `lib/report.ts`, `app/report/` | 실측 기록 페이지(운영자 전용)와 입력 검사·쿠키 확인 |
 | `lib/backfill.ts`, `scripts/backfill.ts` | 과거 예보로 `weather_hourly` 채우기 |
 | `lib/stats.ts`, `lib/db/stats.ts`, `worker/stats-job.ts`, `app/stats/` | 월별 통계 집계(하루 한 번)와 화면. 수동 집계는 `scripts/stats-refresh.ts` |
-| `scripts/` | 마이그레이션 적용, 백필, 통계 수동 집계, Open-Meteo 테스트 데이터 받기 |
+| `scripts/` | 마이그레이션 적용, 백필, 통계 수동 집계, 등급 기준 보정표, Open-Meteo 테스트 데이터 받기 |
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
 | `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크), 정상 지점 |
 | `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
