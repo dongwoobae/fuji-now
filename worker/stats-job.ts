@@ -1,6 +1,6 @@
 import { createDb } from "../lib/db/client";
-import { queryDayRows, queryHourRows, type SqlExecutor } from "../lib/db/stats";
-import { buildStats, isStatsStale, readStats, writeStats } from "../lib/stats";
+import { computeStats, type SqlExecutor } from "../lib/db/stats";
+import { isStatsStale, readStats, writeStats } from "../lib/stats";
 
 export type StatsEnv = { SNAPSHOT_KV: KVNamespace; DATABASE_URL?: string };
 
@@ -13,9 +13,7 @@ export async function runStatsJob(env: StatsEnv, now: Date, connect: (url: strin
     return;
   }
   try {
-    const db = connect(env.DATABASE_URL);
-    const [days, hours] = await Promise.all([queryDayRows(db), queryHourRows(db)]);
-    const stats = buildStats(days, hours, now);
+    const stats = await computeStats(connect(env.DATABASE_URL), now);
     await writeStats(env.SNAPSHOT_KV, stats);
     log({ written: true, cells: stats.cells.length, firstDay: stats.firstDay, lastDay: stats.lastDay });
   } catch (error) {

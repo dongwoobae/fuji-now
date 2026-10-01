@@ -277,7 +277,7 @@ spots { cameras[], candidates[], cameraCheckedAt | null }   // 명소 카드. �
   - 자료 기간, 실측이 들어간 날 수, 집계 시각을 적는다.
 - 집계(`worker/stats-job.ts`): 매시 첫 예약 작업에서 KV의 `stats:v1`이 없거나 23시간 넘게 지났으면 Neon에서 다시 집계해 쓴다. 페이지는 KV 키 하나만 읽고 Neon을 부르지 않는다. 실패하면 로그만 남기고 한 시간 뒤 다시 시도한다. KV 만료는 8일이다.
   - 집계 SQL(`lib/db/stats.ts`)은 테스트에서 PGlite(WASM Postgres)에 실제 마이그레이션을 적용해 돌린다.
-- 백필 직후처럼 바로 다시 집계하려면 `pnpm exec wrangler kv key delete stats:v1 --binding SNAPSHOT_KV --remote`로 키를 지운다. 다음 정시 실행에서 새로 집계한다.
+- 백필이나 등급 기준을 바꾼 직후처럼 바로 다시 집계하려면 로컬에서 `pnpm stats:refresh`(`scripts/stats-refresh.ts`)를 실행한다. 예약 작업과 같은 집계 함수(`computeStats`)로 Neon에서 집계하고, `wrangler kv key put --remote`로 같은 키·같은 만료(8일)로 쓴다. 월별 5호 전체 보인 날 비율을 터미널에 출력한다.
 
 ### 화면
 

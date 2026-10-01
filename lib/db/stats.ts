@@ -1,6 +1,6 @@
 import { sql, type SQL } from "drizzle-orm";
 import { SUMMIT } from "../lakes";
-import { dayRowSchema, hourRowSchema, VISIBLE_GRADES, type DayRow, type HourRow } from "../stats";
+import { buildStats, dayRowSchema, hourRowSchema, VISIBLE_GRADES, type DayRow, type HourRow, type Stats } from "../stats";
 
 // neon-http와 테스트용 PGlite가 함께 맞는 최소 형태.
 export type SqlExecutor = { execute: (query: SQL) => Promise<{ rows: unknown[] }> };
@@ -60,4 +60,10 @@ export async function queryHourRows(db: SqlExecutor): Promise<HourRow[]> {
     group by lake, month, grade
   `);
   return result.rows.map((row) => hourRowSchema.parse(row));
+}
+
+// 예약 작업(worker/stats-job.ts)과 수동 집계(scripts/stats-refresh.ts)가 함께 쓴다.
+export async function computeStats(db: SqlExecutor, now: Date): Promise<Stats> {
+  const [days, hours] = await Promise.all([queryDayRows(db), queryHourRows(db)]);
+  return buildStats(days, hours, now);
 }
