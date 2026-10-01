@@ -3,6 +3,9 @@ import { VISIBILITY_GRADES } from "../visibility";
 
 export const gradeEnum = pgEnum("visibility_grade", VISIBILITY_GRADES);
 
+// live: 매시 기록 작업이 받은 값. backfill: Open-Meteo 과거 예보 API로 나중에 채운 값.
+export const WEATHER_SOURCES = ["live", "backfill"] as const;
+
 // 지점은 호수 id 다섯과 "summit"이다(lib/lakes.ts의 POINT_IDS). 지점을 늘릴 때 마이그레이션이 필요 없게 text로 둔다.
 // 운량은 % 정수, 강수는 mm다. 원시 운량을 함께 남겨 등급 기준을 바꾸면 과거 등급을 다시 계산할 수 있게 한다.
 const layers = {
@@ -23,6 +26,7 @@ export const weatherHourly = pgTable(
     time: timestamp("time", { withTimezone: true }).notNull(),
     ...layers,
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    source: text("source", { enum: WEATHER_SOURCES }).notNull().default("live"),
   },
   (t) => [primaryKey({ columns: [t.point, t.time] }), index("weather_hourly_time_idx").on(t.time)],
 );

@@ -20,7 +20,10 @@ describe("buildRecordRows", () => {
 
   it("records the current hour once per point", () => {
     expect(rows.actual.map((row) => row.point)).toEqual(FORECAST_POINTS.map((point) => point.id));
-    for (const row of rows.actual) expect(row.time?.toISOString()).toBe(new Date(firstHour).toISOString());
+    for (const row of rows.actual) {
+      expect(row.time?.toISOString()).toBe(new Date(firstHour).toISOString());
+      expect(row.source).toBe("live");
+    }
   });
 
   it("keeps only the chosen lead times that the response covers", () => {

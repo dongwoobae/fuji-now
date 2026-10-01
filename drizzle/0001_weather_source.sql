@@ -1,0 +1,1 @@
+ALTER TABLE "weather_hourly" ADD COLUMN "source" text DEFAULT 'live' NOT NULL;
