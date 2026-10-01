@@ -1,0 +1,302 @@
+{
+  "id": "e8a1e1a7-ddda-4bc2-9b85-a00d587ec49e",
+  "prevId": "2f4f0dcf-d077-4fdf-86d5-ad90b715e6f4",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.forecast": {
+      "name": "forecast",
+      "schema": "",
+      "columns": {
+        "point": {
+          "name": "point",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_time": {
+          "name": "target_time",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lead_hours": {
+          "name": "lead_hours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "low_cloud_cover": {
+          "name": "low_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mid_cloud_cover": {
+          "name": "mid_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "high_cloud_cover": {
+          "name": "high_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precipitation": {
+          "name": "precipitation",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "visibility_grade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daylight": {
+          "name": "daylight",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "forecast_target_time_idx": {
+          "name": "forecast_target_time_idx",
+          "columns": [
+            {
+              "expression": "target_time",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "forecast_point_target_time_lead_hours_pk": {
+          "name": "forecast_point_target_time_lead_hours_pk",
+          "columns": [
+            "point",
+            "target_time",
+            "lead_hours"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.human_report": {
+      "name": "human_report",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "place": {
+          "name": "place",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "visibility_grade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "human_report_place_observed_at_idx": {
+          "name": "human_report_place_observed_at_idx",
+          "columns": [
+            {
+              "expression": "place",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "observed_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.weather_hourly": {
+      "name": "weather_hourly",
+      "schema": "",
+      "columns": {
+        "point": {
+          "name": "point",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time": {
+          "name": "time",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "low_cloud_cover": {
+          "name": "low_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mid_cloud_cover": {
+          "name": "mid_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "high_cloud_cover": {
+          "name": "high_cloud_cover",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precipitation": {
+          "name": "precipitation",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "visibility_grade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "daylight": {
+          "name": "daylight",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'live'"
+        }
+      },
+      "indexes": {
+        "weather_hourly_time_idx": {
+          "name": "weather_hourly_time_idx",
+          "columns": [
+            {
+              "expression": "time",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "weather_hourly_point_time_pk": {
+          "name": "weather_hourly_point_time_pk",
+          "columns": [
+            "point",
+            "time"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.visibility_grade": {
+      "name": "visibility_grade",
+      "schema": "public",
+      "values": [
+        "perfect",
+        "clear",
+        "cloudy",
+        "obscured",
+        "bad"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

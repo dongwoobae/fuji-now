@@ -14,13 +14,16 @@ const hourlyValues = z.array(z.number().nullable());
 const locationSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
-  current: z.object({
-    time: localTime,
-    temperature_2m: z.number(),
-    cloud_cover: z.number(),
-    precipitation: z.number(),
-    wind_speed_10m: z.number(),
-  }),
+  // 과거 예보(백필) 요청에는 current가 없다.
+  current: z
+    .object({
+      time: localTime,
+      temperature_2m: z.number(),
+      cloud_cover: z.number(),
+      precipitation: z.number(),
+      wind_speed_10m: z.number(),
+    })
+    .optional(),
   hourly: z.object({
     time: z.array(localTime),
     cloud_cover_low: hourlyValues,
@@ -58,19 +61,32 @@ export function toJstIso(local: string): string {
   return `${local}:00+09:00`;
 }
 
-export function buildWeatherUrl(points: readonly ForecastPoint[], forecastHours: number = FORECAST_HOURS): URL {
-  const url = new URL("https://api.open-meteo.com/v1/forecast");
+function msmUrl(base: string, points: readonly ForecastPoint[]): URL {
+  const url = new URL(base);
   url.searchParams.set("latitude", points.map((point) => point.latitude).join(","));
   url.searchParams.set("longitude", points.map((point) => point.longitude).join(","));
   url.searchParams.set("models", "jma_msm");
   // 기본값(land)은 표고가 비슷한 육지 격자를 골라 최근접이 아닐 수 있다. 좌표 대조가 최근접 격자를 전제로 한다.
   url.searchParams.set("cell_selection", "nearest");
-  url.searchParams.set("current", "temperature_2m,cloud_cover,precipitation,wind_speed_10m");
   url.searchParams.set("hourly", "cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation");
   url.searchParams.set("daily", "sunrise,sunset");
+  url.searchParams.set("timezone", "Asia/Tokyo");
+  return url;
+}
+
+export function buildWeatherUrl(points: readonly ForecastPoint[], forecastHours: number = FORECAST_HOURS): URL {
+  const url = msmUrl("https://api.open-meteo.com/v1/forecast", points);
+  url.searchParams.set("current", "temperature_2m,cloud_cover,precipitation,wind_speed_10m");
   url.searchParams.set("forecast_hours", String(forecastHours));
   url.searchParams.set("wind_speed_unit", "ms");
-  url.searchParams.set("timezone", "Asia/Tokyo");
+  return url;
+}
+
+// 과거 예보 API는 시각마다 그 무렵 실행의 첫 시간대 값을 이어 붙여 준다. 날짜는 일본 날짜(YYYY-MM-DD)이고 양 끝을 포함한다.
+export function buildHistoryUrl(points: readonly ForecastPoint[], startDate: string, endDate: string): URL {
+  const url = msmUrl("https://historical-forecast-api.open-meteo.com/v1/forecast", points);
+  url.searchParams.set("start_date", startDate);
+  url.searchParams.set("end_date", endDate);
   return url;
 }
 
@@ -146,6 +162,7 @@ export function parseWeatherResponse(json: unknown, points: readonly ForecastPoi
   let sun: { sunrise: string; sunset: string } | null = null;
   for (const { id, location } of forecasts) {
     if (id === SUMMIT.id) continue;
+    if (!location.current) throw new Error(`Open-Meteo returned no current weather for ${id}`);
     byLake[id] = {
       time: toJstIso(location.current.time),
       temperature: location.current.temperature_2m,
