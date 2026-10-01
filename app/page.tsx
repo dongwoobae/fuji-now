@@ -1,11 +1,13 @@
 import { env } from "cloudflare:workers";
 import { ExternalLink, Mountain } from "lucide-react";
 import { Freshness } from "@/components/freshness";
+import { GradeChip } from "@/components/grade-chip";
 import { LakeCard } from "@/components/lake-card";
 import { SpotCard } from "@/components/spot-card";
 import { LAKES } from "@/lib/lakes";
 import { readSnapshot } from "@/lib/snapshot/store";
-import { cameraStateOf, formatJstTime, freshnessOf, isNight } from "@/lib/view";
+import { cameraStateOf, currentHour, formatJstTime, freshnessOf, isNight } from "@/lib/view";
+import { GRADE_DESCRIPTION, VISIBILITY_GRADES } from "@/lib/visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,21 @@ export default async function Home() {
         <p className="subcopy">
           후지 5호의 라이브 카메라와 기상청 MSM 예보를 나눠서 보여줍니다. 운량은 예보 모델 값이니, 실제로 보이는지는 카메라로 확인하세요.
         </p>
+        <details className="grade-legend">
+          <summary>전망 5단계 보는 법</summary>
+          <p>
+            호수와 후지산 정상 격자의 하층·중층 운량, 호수의 강수 예보로 매긴 모델 추정입니다. 단계 이름은 후지산 웹캠 연구
+            FujiView의 5단계를 따랐습니다.
+          </p>
+          <dl>
+            {VISIBILITY_GRADES.map((grade) => (
+              <div key={grade} style={{ display: "contents" }}>
+                <dt><GradeChip grade={grade} daylight /></dt>
+                <dd>{GRADE_DESCRIPTION[grade]}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
         {snapshot?.sunrise && snapshot.sunset && (
           <p className="sun">
             일출 {formatJstTime(snapshot.sunrise)} · 일몰 {formatJstTime(snapshot.sunset)} <span>(가와구치코 기준)</span>
@@ -59,15 +76,21 @@ export default async function Home() {
           <section className="panel compare-wrap">
             <table className="compare-table">
               <thead>
-                <tr><th>호수</th><th>운량</th><th>기온</th><th>카메라</th></tr>
+                <tr><th>호수</th><th>전망</th><th>운량</th><th>기온</th><th>카메라</th></tr>
               </thead>
               <tbody>
                 {LAKES.map((lake) => {
                   const data = byId.get(lake.id) ?? null;
                   const weather = data?.weather ?? null;
+                  const hour = weather ? currentHour(weather, now) : null;
                   return (
                     <tr key={lake.id}>
                       <td><a href={`#lake-${lake.id}`}>{lake.name}</a></td>
+                      <td>
+                        <a href={`#lake-${lake.id}`} tabIndex={-1}>
+                          {hour ? <GradeChip grade={hour.grade} daylight={hour.daylight} /> : "—"}
+                        </a>
+                      </td>
                       <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{weather ? `${weather.cloudCover}%` : "—"}</a></td>
                       <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{weather ? `${Math.round(weather.temperature)}°` : "—"}</a></td>
                       <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{CAMERA_LABEL[cameraStateOf(data).kind]}</a></td>

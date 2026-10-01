@@ -9,7 +9,10 @@
 - 개발자 본인의 Cloudflare 계정에 Workers로 배포한다. 주소: https://fujinow.dwoobae.com (Workers Custom Domain). workers.dev 주소는 끈다.
 - 예전 ChatGPT Sites 주소(https://fuji-now.dongwoobae.chatgpt.site)는 옛 버전 그대로 남아 있고, 이 저장소와 연결되지 않는다.
 - 후지 5호 비교 표와 호수 카드를 보여준다. 호수마다 기상청 MSM 운량·기온·강수량·풍속, 앞으로 8시간 하층 운량, 누르면 재생되는 YouTube 라이브 카메라가 있다. 방송 중인 카메라가 여럿이면 최대 3대까지 번호로 골라 본다. 여섯 번째 명소 카드는 주레이토 5층탑 같은 호수 밖 전망 명소 카메라다.
-- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v4`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
+- 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v5`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
+- 시각마다 후지산이 보이는 정도를 5단계(완벽·잘 보임·구름 걸림·거의 가려짐·안 보임)로 추정해 보여준다. 호수와 정상 격자의 하층·중층·상층 운량과 강수로 매긴다. 단계 이름은 FujiView 연구를 따랐다.
+- 매시 정각에 MSM 값과 리드타임별 예보를 Neon Postgres에 쌓는다. 나중에 월별 통계("8월은 안 보이는 날이 절반 이상")를 내기 위해서다.
+- 운영자가 눈으로 본 후지산을 `/report`에 남긴다. 같은 시간대에 실측이 있으면 통계는 모델 추정 대신 실측을 쓴다.
 
 ## 로컬 실행
 
@@ -28,13 +31,16 @@ pnpm test
 - 서버 비밀값(API 키)은 `.env.local`에 두고 커밋하지 않는다. `.gitignore`가 `.env*`를 제외한다. 로컬 wrangler는 `.dev.vars`가 없으면 `.env`와 `.env.local`을 읽는다.
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
 - 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
+- Neon 연결 문자열은 `.env.local`의 `DATABASE_URL`에 둔다. 스키마를 고치면 `pnpm db:generate`로 `drizzle/`에 마이그레이션을 만들고, `pnpm db:migrate`로 적용한다. main에 병합하면 CI가 배포 직전에 적용한다.
+- 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
+- Open-Meteo 요청 형식을 바꾸면 `node scripts/capture-open-meteo-fixture.mjs`로 테스트 데이터를 다시 받는다. 지금 파일의 일부는 임시 값이다(`lib/__fixtures__/README.md`).
 - 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
 
 ## 배포
 
 main에 병합하면 GitHub Actions(`.github/workflows/ci.yml`)가 lint·typecheck·test·build를 거쳐 배포한다. PR에서는 배포만 빼고 같은 검사와 빌드가 돈다. 문서(`docs/**`, `*.md`)만 바뀐 커밋에서는 돌지 않는다.
 
-배포에는 GitHub Secret `CLOUDFLARE_API_TOKEN`이 필요하다. Cloudflare 대시보드에서 "Edit Cloudflare Workers" 템플릿으로 만들고, 범위를 이 계정과 dwoobae.com 존으로 좁힌다. `YOUTUBE_API_KEY`는 워커 secret이라 배포해도 유지된다.
+배포에는 GitHub Secret `CLOUDFLARE_API_TOKEN`과 `DATABASE_URL`(배포 전 마이그레이션)이 필요하다. Cloudflare 대시보드에서 "Edit Cloudflare Workers" 템플릿으로 만들고, 범위를 이 계정과 dwoobae.com 존으로 좁힌다. `YOUTUBE_API_KEY`·`DATABASE_URL`·`REPORT_CODE`는 워커 secret이라 배포해도 유지된다.
 
 로컬에서 직접 배포하는 것은 CI 검사를 거치지 않는 비상 경로다.
 
@@ -53,7 +59,10 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 |---|---|---|
 | 워커 `fuji-now` | main 병합(GitHub Actions) 또는 `pnpm run deploy` | `pnpm exec wrangler deployments list` |
 | 도메인 `fujinow.dwoobae.com` | `wrangler.jsonc`의 `routes`(`custom_domain`). 배포할 때 DNS 레코드와 인증서가 함께 만들어진다 | `curl -I https://fujinow.dwoobae.com/` |
-| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v4 --binding SNAPSHOT_KV --remote` |
+| KV `fuji-now-snapshot` (바인딩 `SNAPSHOT_KV`) | `pnpm exec wrangler kv namespace create fuji-now-snapshot` → ID를 `wrangler.jsonc`에 적는다 | `pnpm exec wrangler kv key get snapshot:v5 --binding SNAPSHOT_KV --remote` |
+| Neon 프로젝트 `rapid-smoke-03243240` (브랜치 `production`, 싱가포르) | Neon 콘솔에서 만든다. 테이블은 `pnpm db:migrate` | `pnpm db:studio`, 또는 `wrangler tail`의 `"event":"record"` 로그 |
+| secret `DATABASE_URL` | Neon 콘솔 Connect의 pooled 연결 문자열을 `wrangler secret put DATABASE_URL`, `gh secret set DATABASE_URL -R dongwoobae/fuji-now`, `.env.local`에 넣는다 | `pnpm exec wrangler secret list` |
+| secret `REPORT_CODE` | 길고 무작위인 문자열(예: `openssl rand -base64 32`)을 `wrangler secret put REPORT_CODE`로 넣는다. 바꾸면 기존 로그인이 모두 풀린다 | `/report`에서 로그인 |
 | secret `YOUTUBE_API_KEY` | `.env.local`에서 읽어 `wrangler secret put YOUTUBE_API_KEY`로 넘긴다 | `pnpm exec wrangler secret list` |
 | GitHub Secret `CLOUDFLARE_API_TOKEN` | Cloudflare 대시보드에서 만들어 `gh secret set CLOUDFLARE_API_TOKEN -R dongwoobae/fuji-now`로 넣는다 | `gh secret list -R dongwoobae/fuji-now` |
 | 예약 작업 `*/5 * * * *` | `wrangler.jsonc`의 `triggers.crons`. 배포할 때 함께 등록된다 | `pnpm exec wrangler tail fuji-now` |
@@ -62,8 +71,9 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 
 1. `pnpm exec wrangler delete fuji-now` — 워커와 예약 작업, secret이 함께 지워진다. 그 뒤 대시보드의 dwoobae.com DNS에 `fujinow` 레코드가 남았는지 확인한다.
 2. `pnpm exec wrangler kv namespace delete --binding SNAPSHOT_KV`
-3. Google Cloud 콘솔에서 fuji-now용 API 키를 폐기한다.
-4. Cloudflare 대시보드에서 fuji-now 배포용 API 토큰을 폐기하고, GitHub Secret을 지운다.
+3. 기록을 보관할 필요가 없으면 Neon 콘솔에서 프로젝트를 지우고, GitHub Secret `DATABASE_URL`을 지운다.
+4. Google Cloud 콘솔에서 fuji-now용 API 키를 폐기한다.
+5. Cloudflare 대시보드에서 fuji-now 배포용 API 토큰을 폐기하고, GitHub Secret을 지운다.
 
 ## 구조
 
@@ -72,8 +82,14 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `.github/workflows/ci.yml` | PR·main 검사와 main 배포 |
 | `worker/index.ts` | 워커 진입점. `fetch`는 vinext, `scheduled`는 스냅샷 작업 |
 | `worker/snapshot-job.ts` | 5분 주기 작업: 방송 여부·기상 조회 → 스냅샷 저장 |
+| `worker/record-job.ts` | 매시 첫 실행: 73시간 예보 조회 → Neon에 기록 |
+| `lib/visibility.ts` | 5단계 등급 정의·기준값·실측 우선 규칙 |
+| `lib/record.ts` | 예보 응답을 기록 행으로 나누기 |
+| `lib/db/`, `drizzle/`, `drizzle.config.ts` | Neon 스키마·클라이언트·쿼리, 마이그레이션 |
+| `lib/report.ts`, `app/report/` | 실측 기록 페이지(운영자 전용)와 입력 검사·쿠키 확인 |
+| `scripts/` | 마이그레이션 적용, Open-Meteo 테스트 데이터 받기 |
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
-| `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크) |
+| `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크), 정상 지점 |
 | `lib/snapshot/` | 스냅샷 스키마·합치기·KV 읽기/쓰기 |
 | `lib/youtube.ts`, `lib/weather.ts`, `lib/amedas.ts` | 외부 API 호출과 응답 검사 |
 | `lib/view.ts` | 화면 표시 계산 |

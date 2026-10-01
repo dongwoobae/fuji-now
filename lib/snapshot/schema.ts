@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { LAKE_IDS } from "../lakes";
+import { VISIBILITY_GRADES } from "../visibility";
 
-export const SNAPSHOT_KEY = "snapshot:v4";
+export const SNAPSHOT_KEY = "snapshot:v5";
 export const SNAPSHOT_TTL_SECONDS = 24 * 60 * 60;
 // 한쪽 호출만 계속 실패하면 다른 쪽의 쓰기가 KV 만료를 계속 연장한다. 이어받기를 여기서 끊어야 옛 값이 사라진다.
 export const CARRY_MAX_MS = 60 * 60 * 1000;
@@ -20,7 +21,15 @@ const lakeWeatherSchema = z.object({
   cloudCover: z.number(),
   precipitation: z.number(),
   windSpeed: z.number(),
-  hourly: z.array(z.object({ time: z.string(), lowCloudCover: z.number(), precipitation: z.number() })),
+  hourly: z.array(
+    z.object({
+      time: z.string(),
+      lowCloudCover: z.number(),
+      precipitation: z.number(),
+      grade: z.enum(VISIBILITY_GRADES).nullable(),
+      daylight: z.boolean(),
+    }),
+  ),
 });
 
 const observationSchema = z.object({

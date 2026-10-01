@@ -76,7 +76,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      # YOUTUBE_API_KEY는 워커 secret이라 배포해도 유지된다. 여기서 넘기지 않는다.
+      # 새 코드가 새 테이블을 쓰므로 배포 전에 마이그레이션한다. 그래서 잠깐 옛 코드가 새 스키마 위에서 돈다.
+      # 컬럼 삭제·이름 변경은 한 배포에 담지 말고 추가 → 코드 교체 → 정리로 나눈다.
+      - name: Migrate database
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # YOUTUBE_API_KEY·DATABASE_URL·REPORT_CODE는 워커 secret이라 배포해도 유지된다. 여기서 넘기지 않는다.
       - name: Deploy to Cloudflare
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: pnpm exec wrangler deploy --config dist/server/wrangler.json

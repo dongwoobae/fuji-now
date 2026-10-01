@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LakeSnapshot, Snapshot } from "./snapshot/schema";
-import { cameraStateOf, formatJstTime, freshnessOf, isNight, isStale, upcomingHours, windLabel } from "./view";
+import { cameraStateOf, currentHour, formatJstTime, freshnessOf, isNight, isStale, upcomingHours, windLabel } from "./view";
 
 const lake = (patch: Partial<LakeSnapshot>): LakeSnapshot => ({
   id: "kawaguchiko",
@@ -85,11 +85,22 @@ describe("upcomingHours", () => {
       time: `2026-09-29T${String(14 + i).padStart(2, "0")}:00:00+09:00`,
       lowCloudCover: i,
       precipitation: 0,
+      grade: null,
+      daylight: true,
     }));
     const weather = { time: hourly[0].time, temperature: 10, cloudCover: 0, precipitation: 0, windSpeed: 1, hourly };
     const result = upcomingHours(weather, new Date("2026-09-29T15:30:00+09:00"));
     expect(result[0].time).toBe("2026-09-29T15:00:00+09:00");
     expect(result).toHaveLength(8);
+  });
+});
+
+describe("currentHour", () => {
+  it("is the hour containing now, or null when the forecast has run out", () => {
+    const hour = (time: string) => ({ time, lowCloudCover: 0, precipitation: 0, grade: "clear" as const, daylight: true });
+    const weather = { time: "", temperature: 10, cloudCover: 0, precipitation: 0, windSpeed: 1, hourly: [hour("2026-09-29T15:00:00+09:00")] };
+    expect(currentHour(weather, new Date("2026-09-29T15:59:00+09:00"))?.time).toBe("2026-09-29T15:00:00+09:00");
+    expect(currentHour(weather, new Date("2026-09-29T16:00:00+09:00"))).toBeNull();
   });
 });
 
