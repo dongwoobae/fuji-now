@@ -12,6 +12,7 @@
 - 5분마다 예약 작업이 YouTube Data API로 방송 여부를, Open-Meteo로 기상 예보를, 기상청 AMeDAS로 관측 강수를 받아 KV 스냅샷 하나(`snapshot:v5`)에 저장한다. 페이지는 그 스냅샷만 읽는다.
 - 시각마다 후지산이 보이는 정도를 5단계(완벽·잘 보임·구름 걸림·거의 가려짐·안 보임)로 추정해 보여준다. 호수와 정상 격자의 하층·중층·상층 운량과 강수로 매긴다. 단계 이름은 FujiView 연구를 따랐다.
 - 매시 정각에 MSM 값과 리드타임별 예보를 Neon Postgres에 쌓는다. 나중에 월별 통계("8월은 안 보이는 날이 절반 이상")를 내기 위해서다. 2018-08부터의 과거 값은 `pnpm backfill`로 채운다.
+- `/stats`에서 월 × 호수별로 "보인 날" 비율과 5단계 비율을 본다. 하루 한 번 Neon에서 집계해 KV(`stats:v1`)에 넣고, 페이지는 그 키만 읽는다.
 - 운영자가 눈으로 본 후지산을 `/report`에 남긴다. 같은 시간대에 실측이 있으면 통계는 모델 추정 대신 실측을 쓴다.
 
 ## 로컬 실행
@@ -32,6 +33,7 @@ pnpm test
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
 - 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
 - Neon 연결 문자열은 `.env.local`의 `DATABASE_URL`에 둔다. 스키마를 고치면 `pnpm db:generate`로 `drizzle/`에 마이그레이션을 만들고, `pnpm db:migrate`로 적용한다. main에 병합하면 CI가 배포 직전에 적용한다.
+- 통계를 바로 다시 집계하려면 `pnpm exec wrangler kv key delete stats:v1 --binding SNAPSHOT_KV --remote`로 키를 지운다. 다음 정시 실행에서 새로 집계한다.
 - 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다.
 - 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
 - Open-Meteo 요청 형식을 바꾸면 `node scripts/capture-open-meteo-fixture.mjs`로 테스트 데이터를 다시 받는다. 지금 파일의 일부는 임시 값이다(`lib/__fixtures__/README.md`).
@@ -89,6 +91,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `lib/db/`, `drizzle/`, `drizzle.config.ts` | Neon 스키마·클라이언트·쿼리, 마이그레이션 |
 | `lib/report.ts`, `app/report/` | 실측 기록 페이지(운영자 전용)와 입력 검사·쿠키 확인 |
 | `lib/backfill.ts`, `scripts/backfill.ts` | 과거 예보로 `weather_hourly` 채우기 |
+| `lib/stats.ts`, `lib/db/stats.ts`, `worker/stats-job.ts`, `app/stats/` | 월별 통계 집계(하루 한 번)와 화면 |
 | `scripts/` | 마이그레이션 적용, 백필, Open-Meteo 테스트 데이터 받기 |
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
 | `lib/lakes.ts` | 호수 목록(좌표·후보 영상 ID·대체 링크), 정상 지점 |

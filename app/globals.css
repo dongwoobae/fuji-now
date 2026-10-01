@@ -106,6 +106,42 @@ a { color: inherit; }
 .report .panel { overflow-x: auto; }
 .link-button { border: 0; background: none; padding: 0; color: #194c60; text-decoration: underline; font-size: 13px; }
 
+.stats { padding: 32px 0; display: grid; gap: 16px; }
+.stats h1 { margin: 0; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.2; letter-spacing: -.05em; }
+.stats > p { margin: 0; }
+.stats-section { display: grid; gap: 12px; }
+.stats-section .muted { margin: 0; }
+.stats-scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #58717b; }
+.stats-scale div { width: 160px; height: 10px; border-radius: 4px; }
+.stats-table-wrap { overflow-x: auto; }
+.stats-table { width: 100%; min-width: 480px; table-layout: fixed; border-collapse: separate; border-spacing: 2px; font-size: 13px; }
+.stats-table th { font-size: 12px; font-weight: 700; color: #527985; padding: 4px; text-align: center; }
+.stats-table th[scope="row"], .stats-table thead th:first-child { position: sticky; left: 0; background: #fff; text-align: left; width: 40px; }
+.stats-table td { border-radius: 4px; padding: 6px 4px; text-align: center; }
+.stats-table td strong, .stats-table td small { display: block; }
+.stats-table td small { font-size: 11px; opacity: .85; }
+.stats-empty { background: #f3f6f6; color: #9aaeb3; }
+.stack-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: #3c566b; }
+.stack-legend li { display: flex; align-items: center; gap: 6px; }
+.stack-legend span { width: 12px; height: 12px; border-radius: 3px; }
+.stack-group summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.stack-rows { display: grid; gap: 4px; padding: 6px 0 10px; }
+.stack-row { display: grid; grid-template-columns: 36px 1fr 40px; gap: 8px; align-items: center; font-size: 12px; color: #58717b; }
+.stack-row small { text-align: right; font-size: 12px; color: #163341; }
+.grade-bar { display: flex; gap: 2px; height: 14px; }
+.grade-bar span:first-child { border-radius: 4px 0 0 4px; }
+.grade-bar span:last-child { border-radius: 0 4px 4px 0; }
+.grade-bar span:only-child { border-radius: 4px; }
+.grade-bar-empty { background: #f3f6f6; border-radius: 4px; }
+/* 순서형 파랑 램프(완벽 짙음 → 안 보임 옅음). 흰 배경에서 가장 옅은 단계도 2:1을 넘는다. */
+.stack-perfect { background: #0d366b; }
+.stack-clear { background: #1c5cab; }
+.stack-cloudy { background: #2a78d6; }
+.stack-obscured { background: #5598e7; }
+.stack-bad { background: #86b6ef; }
+.stats-link { margin: 12px 0 0; font-weight: 700; }
+.stats-link a { color: #194c60; }
+
 @media (min-width: 880px) {
   .lake-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
