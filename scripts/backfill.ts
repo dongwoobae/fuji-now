@@ -3,39 +3,25 @@
 // 이미 있는 시각은 건너뛰므로(ON CONFLICT DO NOTHING) 중간에 끊기면 같은 명령을 다시 실행하면 된다.
 import { sql } from "drizzle-orm";
 import { BACKFILL_FROM, isIsoDate, jstYesterday, monthRanges } from "../lib/backfill";
-import { createDb } from "../lib/db/client";
+import { createDb, describeError } from "../lib/db/client";
 import { weatherHourly } from "../lib/db/schema";
 import { FORECAST_POINTS } from "../lib/lakes";
 import { buildBackfillRows } from "../lib/record";
 import { buildHistoryUrl, parseForecastPoints } from "../lib/weather";
+import { requireDatabaseUrl } from "./env";
 
-// 매개변수 수 한도(65,535)보다 충분히 작게. 한 행은 열 12개라 2,000행이면 24,000개다.
+// 한 insert의 매개변수 수(행 수 × weather_hourly 열 수)가 Postgres 한도(65,535)보다 충분히 작게.
 const INSERT_CHUNK = 2_000;
 // Open-Meteo 무료 한도(분당 600회)를 넉넉히 지키려고 요청 사이를 띄운다.
 const PAUSE_MS = 1_000;
 const CALL_TIMEOUT_MS = 60_000;
 
-try {
-  process.loadEnvFile(".env.local");
-} catch {}
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("[backfill] DATABASE_URL이 없다 (.env.local)");
-  process.exit(1);
-}
+const databaseUrl = requireDatabaseUrl("backfill");
 
 const [from = BACKFILL_FROM, to = jstYesterday(new Date())] = process.argv.slice(2);
 if (!isIsoDate(from) || !isIsoDate(to) || from > to) {
   console.error(`[backfill] 날짜가 잘못됐다: ${from} ~ ${to} (YYYY-MM-DD)`);
   process.exit(1);
-}
-
-// drizzle은 쿼리 오류를 "Failed query: <SQL> params: <값 수천 개>"로 감싸고 원인을 cause에 둔다. 원인만 짧게 보여준다.
-function describeError(error: unknown): string {
-  if (!(error instanceof Error)) return String(error);
-  const cause = error.cause instanceof Error ? error.cause.message : null;
-  return cause ?? error.message.slice(0, 300);
 }
 
 const db = createDb(databaseUrl);

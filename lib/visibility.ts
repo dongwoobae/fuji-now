@@ -44,12 +44,3 @@ export function estimateGrade(lake: CloudLayers & { precipitation: number }, sum
   if (cover >= r.clearCover || summit.high >= r.clearHighCover) return "clear";
   return "perfect";
 }
-
-// 사람 실측이 있으면 그것이 그 시각의 등급이다. 모델 추정은 실측이 없을 때만 쓴다.
-export function resolveGrade(human: VisibilityGrade | null, model: VisibilityGrade | null): VisibilityGrade | null {
-  return human ?? model;
-}
-
-export function isVisibilityGrade(value: unknown): value is VisibilityGrade {
-  return typeof value === "string" && (VISIBILITY_GRADES as readonly string[]).includes(value);
-}

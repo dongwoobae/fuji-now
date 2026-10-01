@@ -8,3 +8,9 @@ export function createDb(databaseUrl: string) {
 }
 
 export type Db = ReturnType<typeof createDb>;
+
+// drizzle은 쿼리 오류를 "Failed query: <SQL> params: <값 수천 개>"로 감싸고 원인을 cause에 둔다. 원인만 짧게 보여준다.
+export function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  return error.cause instanceof Error ? error.cause.message : error.message.slice(0, 300);
+}

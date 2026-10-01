@@ -2,26 +2,12 @@
 // 실행: pnpm regrade   (.env.local의 DATABASE_URL). 바뀐 행만 고치므로 여러 번 실행해도 된다.
 // 끝나면 pnpm stats:refresh로 통계를 다시 집계한다.
 import { monthRanges } from "../lib/backfill";
-import { createDb } from "../lib/db/client";
+import { createDb, describeError } from "../lib/db/client";
 import { changedGrades, dateSpan, readLayerRows, REGRADE_TABLES, writeGrades } from "../lib/db/regrade";
 import { GRADE_RULES } from "../lib/visibility";
+import { requireDatabaseUrl } from "./env";
 
-try {
-  process.loadEnvFile(".env.local");
-} catch {}
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("[regrade] DATABASE_URL이 없다 (.env.local)");
-  process.exit(1);
-}
-
-const describe = (error: unknown) => {
-  if (!(error instanceof Error)) return String(error);
-  return error.cause instanceof Error ? error.cause.message : error.message.slice(0, 300);
-};
-
-const db = createDb(databaseUrl);
+const db = createDb(requireDatabaseUrl("regrade"));
 console.log(`[regrade] 기준: ${JSON.stringify(GRADE_RULES)}`);
 
 for (const table of REGRADE_TABLES) {
@@ -40,7 +26,7 @@ for (const table of REGRADE_TABLES) {
     }
     console.log(`[regrade] ${table} 완료: ${changed}행 바뀜`);
   } catch (error) {
-    console.error(`[regrade] ${table} 실패: ${describe(error)}`);
+    console.error(`[regrade] ${table} 실패: ${describeError(error)}`);
     console.error("[regrade] 바뀐 행만 고치므로 같은 명령을 다시 실행하면 이어진다");
     process.exit(1);
   }

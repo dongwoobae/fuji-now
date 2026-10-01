@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fixture from "../lib/__fixtures__/open-meteo-msm.json";
 import { FORECAST_POINTS } from "../lib/lakes";
 import type { RecordRows } from "../lib/record";
 import { toJstIso } from "../lib/weather";
-import { isRecordTick, runRecordJob } from "./record-job";
+import { RECORD_CRON, runRecordJob } from "./record-job";
 
 const NOW = new Date(Date.parse(toJstIso(fixture[0].hourly.time[0])));
 
@@ -22,12 +23,11 @@ function stubWeather(response: () => Response) {
   return fetchMock;
 }
 
-describe("isRecordTick", () => {
-  it("is true only for the first five-minute run of the hour", () => {
-    expect(isRecordTick(Date.parse("2026-10-01T03:00:00Z"))).toBe(true);
-    expect(isRecordTick(Date.parse("2026-10-01T03:04:59Z"))).toBe(true);
-    expect(isRecordTick(Date.parse("2026-10-01T03:05:00Z"))).toBe(false);
-    expect(isRecordTick(Date.parse("2026-10-01T03:55:00Z"))).toBe(false);
+describe("RECORD_CRON", () => {
+  it("is registered in wrangler.jsonc on a minute the five-minute snapshot run never uses", () => {
+    const config = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8").replace(/^\s*\/\/.*$/gm, ""));
+    expect(config.triggers.crons).toContain(RECORD_CRON);
+    expect(Number(RECORD_CRON.split(" ")[0]) % 5).not.toBe(0);
   });
 });
 

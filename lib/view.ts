@@ -39,7 +39,8 @@ export function upcomingHours(weather: LakeWeather, now: Date): LakeWeather["hou
 }
 
 export function currentHour(weather: LakeWeather, now: Date): LakeWeather["hourly"][number] | null {
-  return upcomingHours(weather, now)[0] ?? null;
+  const hourStart = now.getTime() - (now.getTime() % 3_600_000);
+  return weather.hourly.find((hour) => Date.parse(hour.time) === hourStart) ?? null;
 }
 
 export type CameraState = { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; cameras: Camera[] };

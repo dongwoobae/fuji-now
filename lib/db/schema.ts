@@ -6,7 +6,7 @@ export const gradeEnum = pgEnum("visibility_grade", VISIBILITY_GRADES);
 // live: 매시 기록 작업이 받은 값. backfill: Open-Meteo 과거 예보 API로 나중에 채운 값.
 export const WEATHER_SOURCES = ["live", "backfill"] as const;
 
-// 지점은 호수 id 다섯과 "summit"이다(lib/lakes.ts의 POINT_IDS). 지점을 늘릴 때 마이그레이션이 필요 없게 text로 둔다.
+// 지점은 호수 id 다섯과 "summit"이다(lib/lakes.ts의 FORECAST_POINTS). 지점을 늘릴 때 마이그레이션이 필요 없게 text로 둔다.
 // 운량은 % 정수, 강수는 mm다. 원시 운량을 함께 남겨 등급 기준을 바꾸면 과거 등급을 다시 계산할 수 있게 한다.
 const layers = {
   lowCloudCover: smallint("low_cloud_cover").notNull(),
@@ -44,7 +44,7 @@ export const forecast = pgTable(
   (t) => [primaryKey({ columns: [t.point, t.targetTime, t.leadHours] }), index("forecast_target_time_idx").on(t.targetTime)],
 );
 
-// 사람 실측. 같은 시각에 있으면 모델 추정보다 우선한다(lib/visibility.ts의 resolveGrade).
+// 사람 실측. 같은 시각에 있으면 모델 추정보다 우선한다(lib/db/stats.ts의 집계 SQL).
 export const humanReport = pgTable(
   "human_report",
   {

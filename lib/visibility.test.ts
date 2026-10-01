@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateGrade, GRADE_RULES as r, isVisibilityGrade, resolveGrade } from "./visibility";
+import { estimateGrade, GRADE_RULES as r } from "./visibility";
 
 const clearSky = { low: 0, mid: 0, high: 0 };
 const lake = (overrides: Partial<{ low: number; mid: number; high: number; precipitation: number }> = {}) => ({
@@ -38,21 +38,5 @@ describe("estimateGrade", () => {
     expect(estimateGrade(lake({ low: r.cloudyCover - 1 }), clearSky)).toBe("clear");
     expect(estimateGrade(lake({ low: r.obscuredCover - 1 }), clearSky)).toBe("cloudy");
     expect(estimateGrade(lake({ low: r.badCover - 1 }), clearSky)).toBe("obscured");
-  });
-});
-
-describe("resolveGrade", () => {
-  it("prefers a human report over the model estimate", () => {
-    expect(resolveGrade("bad", "perfect")).toBe("bad");
-    expect(resolveGrade(null, "cloudy")).toBe("cloudy");
-    expect(resolveGrade(null, null)).toBeNull();
-  });
-});
-
-describe("isVisibilityGrade", () => {
-  it("accepts only the five grades", () => {
-    expect(isVisibilityGrade("clear")).toBe(true);
-    expect(isVisibilityGrade("visible")).toBe(false);
-    expect(isVisibilityGrade(3)).toBe(false);
   });
 });

@@ -84,7 +84,7 @@ export default async function StatsPage() {
       ) : (
         <>
           <p className="muted">
-            자료 {stats.firstDay} ~ {stats.lastDay} · 실측 포함 {humanDays}일 · {jstDateTime.format(new Date(stats.computedAt))} 집계
+            자료 {stats.firstDay} ~ {stats.lastDay} · 실측 포함 {humanDays}일(호수별 합) · {jstDateTime.format(new Date(stats.computedAt))} 집계
           </p>
 
           <section className="panel stats-section">
@@ -114,7 +114,10 @@ export default async function StatsPage() {
                 </tbody>
               </table>
             </div>
-            <p className="muted">칸의 작은 숫자는 그 달에 집계한 날 수입니다. 칸에 마우스를 올리면 보인 날 수가 나옵니다.</p>
+            <p className="muted">
+              칸의 작은 숫자는 그 달에 집계한 날 수입니다. 5호 전체는 다섯 호수의 날 수를 더한 값입니다. 칸에 마우스를 올리면 보인 날 수가
+              나옵니다.
+            </p>
           </section>
 
           <section className="panel stats-section">

@@ -1,5 +1,5 @@
 import handler from "vinext/server/fetch-handler";
-import { isRecordTick, runRecordJob } from "./record-job";
+import { RECORD_CRON, runRecordJob } from "./record-job";
 import { runSnapshotJob } from "./snapshot-job";
 import { runStatsJob } from "./stats-job";
 
@@ -7,13 +7,14 @@ export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return handler.fetch(request, env, ctx);
   },
+  // 예약 작업 CPU 한도는 실행마다 따로 센다. 기록·통계를 스냅샷과 다른 실행으로 뗀 이유는 설계 문서 "예약 작업 CPU" 절에 있다.
   scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(runSnapshotJob(env, new Date()));
-    // 기록은 스냅샷과 따로 돈다. Neon이 실패해도 화면용 스냅샷은 쓰인다.
-    if (isRecordTick(controller.scheduledTime)) {
+    if (controller.cron === RECORD_CRON) {
       const at = new Date(controller.scheduledTime);
       ctx.waitUntil(runRecordJob(env, at));
       ctx.waitUntil(runStatsJob(env, at));
+      return;
     }
+    ctx.waitUntil(runSnapshotJob(env, new Date()));
   },
 } satisfies ExportedHandler<Env>;

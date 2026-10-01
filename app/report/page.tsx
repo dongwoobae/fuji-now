@@ -29,7 +29,7 @@ type Props = { searchParams: Promise<{ error?: string; saved?: string }> };
 export default async function ReportPage({ searchParams }: Props) {
   const { error, saved } = await searchParams;
   const authorized = await isReportAuthorized((await cookies()).get(REPORT_COOKIE)?.value, env.REPORT_CODE);
-  const message = error ? ERRORS[error] : saved ? "저장했습니다." : null;
+  const message = error && Object.hasOwn(ERRORS, error) ? ERRORS[error] : saved ? "저장했습니다." : null;
 
   if (!authorized) {
     return (

@@ -37,6 +37,12 @@ describe("isIsoDate", () => {
     expect(isIsoDate("2018-02-30")).toBe(false);
     expect(isIsoDate("2018-8-1")).toBe(false);
   });
+
+  it("rejects out-of-range months and days instead of throwing", () => {
+    expect(isIsoDate("2018-13-01")).toBe(false);
+    expect(isIsoDate("2018-00-10")).toBe(false);
+    expect(isIsoDate("2018-01-32")).toBe(false);
+  });
 });
 
 describe("buildHistoryUrl", () => {
