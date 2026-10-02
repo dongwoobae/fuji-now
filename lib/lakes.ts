@@ -72,7 +72,7 @@ export const LAKES: readonly Lake[] = [
     latitude: 35.47,
     longitude: 138.61,
     candidates: [{ videoId: "so_3HK9HIdg", label: "쇼지코 호반" }],
-    fallback: { label: "UTY 精進湖ライブカメラ", url: "https://www.uty.co.jp/livecam/shojiko.php" },
+    fallback: { label: "富士河口湖町 精進湖ライブカメラ", url: "https://www.town.fujikawaguchiko.lg.jp/ka/info.php?if_id=2601&ka_id=25" },
     station: "49251",
   },
   {
