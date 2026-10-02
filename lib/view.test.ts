@@ -111,12 +111,19 @@ describe("currentHour", () => {
 });
 
 describe("cameraStateOf", () => {
+  const card = { candidates: [{ videoId: "abc", label: "호반" }] };
+
   it("distinguishes unchecked, offline and live", () => {
-    expect(cameraStateOf(null)).toEqual({ kind: "unchecked" });
-    expect(cameraStateOf(lake({ cameraCheckedAt: null }))).toEqual({ kind: "unchecked" });
-    expect(cameraStateOf(lake({ cameras: [] }))).toEqual({ kind: "offline" });
+    expect(cameraStateOf(card, null)).toEqual({ kind: "unchecked" });
+    expect(cameraStateOf(card, lake({ cameraCheckedAt: null }))).toEqual({ kind: "unchecked" });
+    expect(cameraStateOf(card, lake({ cameras: [] }))).toEqual({ kind: "offline" });
     const camera = { videoId: "abc", title: "t", channelTitle: "c" };
-    expect(cameraStateOf(lake({ cameras: [camera] }))).toEqual({ kind: "live", cameras: [camera] });
+    expect(cameraStateOf(card, lake({ cameras: [camera] }))).toEqual({ kind: "live", cameras: [camera] });
+  });
+
+  it("tells a card without any candidate apart from a camera that is off", () => {
+    expect(cameraStateOf({ candidates: [] }, lake({ cameras: [] }))).toEqual({ kind: "none" });
+    expect(cameraStateOf({ candidates: [] }, null)).toEqual({ kind: "none" });
   });
 });
 

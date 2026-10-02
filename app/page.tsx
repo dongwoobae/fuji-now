@@ -12,7 +12,7 @@ import { GRADE_DESCRIPTION, VISIBILITY_GRADES } from "@/lib/visibility";
 
 export const dynamic = "force-dynamic";
 
-const CAMERA_LABEL = { live: "● 방송 중", offline: "○ 링크만", unchecked: "확인 전" } as const;
+const CAMERA_LABEL = { live: "● 방송 중", offline: "○ 링크만", none: "○ 링크만", unchecked: "확인 전" } as const;
 
 export default async function Home() {
   const snapshot = await readSnapshot(env.SNAPSHOT_KV);
@@ -95,7 +95,7 @@ export default async function Home() {
                       </td>
                       <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{weather ? `${weather.cloudCover}%` : "—"}</a></td>
                       <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{weather ? `${Math.round(weather.temperature)}°` : "—"}</a></td>
-                      <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{CAMERA_LABEL[cameraStateOf(data).kind]}</a></td>
+                      <td><a href={`#lake-${lake.id}`} tabIndex={-1}>{CAMERA_LABEL[cameraStateOf(lake, data).kind]}</a></td>
                     </tr>
                   );
                 })}

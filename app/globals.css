@@ -78,6 +78,11 @@ a { color: inherit; }
 .camera-empty { border: 1px dashed #b8cfd4; border-radius: 12px; padding: 16px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; gap: 8px; font-size: 14px; color: #58717b; }
 .camera-empty p { margin: 0; }
 .camera-empty a, .fallback-list a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #194c60; }
+.camera-photo { position: relative; margin: 0; display: grid; gap: 6px; }
+.camera-photo img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.camera-photo-badge { position: absolute; top: 8px; right: 8px; padding: 3px 8px; border-radius: 999px; background: #133f50e6; color: #fff; font-size: 12px; font-weight: 700; }
+.camera-photo figcaption { font-size: 12px; }
+.camera-empty .camera-photo figcaption a { display: inline; font-weight: 400; }
 .fallback-list { margin: 12px 0 0; padding-left: 18px; line-height: 2; }
 
 .site-footer { margin-top: 30px; color: #738990; font-size: 12px; line-height: 1.7; }
@@ -96,10 +101,21 @@ a { color: inherit; }
 .report-form label > span, .report-form legend { font-size: 12px; font-weight: 700; color: #527985; }
 .report-form fieldset { border: 0; margin: 0; padding: 0; }
 .report-form input:not([type="radio"]), .report-form select, .report-form textarea { font: inherit; padding: 10px; border: 1px solid #cbdde0; border-radius: 10px; background: #fff; }
-.report-form .grade-option { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 8px; padding: 6px 0; }
-.report-form .grade-option .grade { justify-self: start; }
-.report-form .grade-option small { color: #58717b; font-size: 13px; }
-.report-form button { justify-self: start; padding: 10px 20px; border: 0; border-radius: 10px; background: #133f50; color: #fff; font-weight: 700; }
+.report-form .place-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-form .place-option { position: relative; display: block; }
+.report-form .place-option input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+.report-form .place-option span { display: block; padding: 10px 14px; border: 1px solid #cbdde0; border-radius: 999px; background: #fff; color: #234858; font-size: 14px; font-weight: 700; }
+.report-form .place-option:has(input:checked) span { background: #133f50; border-color: #133f50; color: #fff; }
+.report-form .place-option:has(input:focus-visible) span { outline: 2px solid #194c60; outline-offset: 2px; }
+.report-form .grade-buttons { display: grid; gap: 8px; }
+.report-form .grade-button { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 10px; min-height: 52px; padding: 10px 14px; border: 1px solid #cbdde0; border-radius: 12px; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.report-form .grade-button .grade { justify-self: start; font-size: 13px; padding: 4px 10px; }
+.report-form .grade-button small { color: #58717b; font-size: 13px; }
+.report-form > button { justify-self: start; padding: 10px 20px; border: 0; border-radius: 10px; background: #133f50; color: #fff; font-weight: 700; }
+.report-details summary { cursor: pointer; font-size: 13px; font-weight: 700; color: #234858; }
+.report-details label { margin-top: 12px; }
+.report-saved { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.report-saved p { margin: 0; }
 .report-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 13px; }
 .report-table th { text-align: left; font-size: 12px; color: #527985; padding: 0 6px 8px; }
 .report-table td { border-top: 1px solid #edf2f2; padding: 8px 6px; vertical-align: top; }
