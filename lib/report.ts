@@ -7,12 +7,14 @@ export const REPORT_COOKIE_MAX_AGE = 180 * 24 * 60 * 60;
 export const NOTE_MAX_LENGTH = 500;
 // 폰 시계가 조금 빠른 경우만 받아 준다. 미래 시각의 실측은 오타다.
 const FUTURE_SLACK_MS = 10 * 60 * 1000;
+// 장소 기본값과 빈 관측 시각의 규칙·근거는 설계 문서 "실측 기록 페이지" 절에 있다.
+export const REPORT_RECENT_WINDOW_MS = 3 * 60 * 1000;
 
 const reportFormSchema = z.object({
   place: z.enum(LAKE_IDS),
   grade: z.enum(VISIBILITY_GRADES),
   // <input type="datetime-local">은 오프셋 없는 시각을 보낸다. 입력 화면이 일본 시각이라고 안내한다.
-  observedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
+  observedAt: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)]),
   note: z.string().trim().max(NOTE_MAX_LENGTH),
 });
 
@@ -22,19 +24,24 @@ export function parseReportForm(form: FormData, now: Date): { ok: true; value: R
   const parsed = reportFormSchema.safeParse({
     place: form.get("place"),
     grade: form.get("grade"),
-    observedAt: form.get("observedAt"),
+    observedAt: form.get("observedAt") ?? "",
     note: form.get("note") ?? "",
   });
   if (!parsed.success) return { ok: false };
-  const observedAt = new Date(`${parsed.data.observedAt}:00+09:00`);
+  const observedAt = parsed.data.observedAt === "" ? now : new Date(`${parsed.data.observedAt}:00+09:00`);
   if (Number.isNaN(observedAt.getTime()) || observedAt.getTime() > now.getTime() + FUTURE_SLACK_MS) return { ok: false };
   const { place, grade, note } = parsed.data;
   return { ok: true, value: { place, grade, observedAt, note: note === "" ? null : note } };
 }
 
-// datetime-local 입력의 기본값. 일본 시각으로 분까지.
-export function toJstInputValue(date: Date): string {
-  return new Date(date.getTime() + 9 * 3_600_000).toISOString().slice(0, 16);
+export function pickDefaultPlace(recentPlaces: readonly string[], random: () => number = Math.random): LakeId {
+  const fresh = LAKE_IDS.filter((id) => !recentPlaces.includes(id));
+  const pool = fresh.length > 0 ? fresh : LAKE_IDS;
+  return pool[Math.floor(random() * pool.length)];
+}
+
+export function parseReportId(value: unknown): number | null {
+  return typeof value === "string" && /^[1-9]\d*$/.test(value) ? Number(value) : null;
 }
 
 // 쿠키에는 비밀 코드 대신 그 해시를 둔다. 코드를 바꾸면 기존 쿠키가 모두 무효가 된다.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isReportAuthorized, parseReportForm, reportToken, toJstInputValue } from "./report";
+import { isReportAuthorized, parseReportForm, parseReportId, pickDefaultPlace, reportToken } from "./report";
 
 const NOW = new Date("2026-10-01T03:30:00Z"); // 일본 12:30
 
@@ -45,11 +45,36 @@ describe("parseReportForm", () => {
   it("rejects a note over the limit", () => {
     expect(parseReportForm(form({ ...valid, note: "가".repeat(501) }), NOW).ok).toBe(false);
   });
+
+  it("uses the submit time when the time is left empty or missing", () => {
+    const empty = parseReportForm(form({ ...valid, observedAt: "" }), NOW);
+    expect(empty.ok && empty.value.observedAt).toEqual(NOW);
+    const missing = form(valid);
+    missing.delete("observedAt");
+    const result = parseReportForm(missing, NOW);
+    expect(result.ok && result.value.observedAt).toEqual(NOW);
+  });
 });
 
-describe("toJstInputValue", () => {
-  it("formats the Japan time to the minute", () => {
-    expect(toJstInputValue(NOW)).toBe("2026-10-01T12:30");
+describe("pickDefaultPlace", () => {
+  it("picks at random among lakes without a recent report", () => {
+    const recent = ["kawaguchiko", "saiko"];
+    expect(pickDefaultPlace(recent, () => 0)).toBe("yamanakako");
+    expect(pickDefaultPlace(recent, () => 0.5)).toBe("shojiko");
+    expect(pickDefaultPlace(recent, () => 0.99)).toBe("motosuko");
+  });
+
+  it("falls back to every lake once all have been reported", () => {
+    const all = ["yamanakako", "kawaguchiko", "saiko", "shojiko", "motosuko"];
+    expect(pickDefaultPlace(all, () => 0)).toBe("yamanakako");
+    expect(pickDefaultPlace(all, () => 0.99)).toBe("motosuko");
+  });
+});
+
+describe("parseReportId", () => {
+  it("accepts only positive integers", () => {
+    expect(parseReportId("12")).toBe(12);
+    for (const value of ["", "0", "-1", "1.5", "1e3", "abc", null, undefined]) expect(parseReportId(value)).toBeNull();
   });
 });
 
