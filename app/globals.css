@@ -78,6 +78,11 @@ a { color: inherit; }
 .camera-empty { border: 1px dashed #b8cfd4; border-radius: 12px; padding: 16px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; gap: 8px; font-size: 14px; color: #58717b; }
 .camera-empty p { margin: 0; }
 .camera-empty a, .fallback-list a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #194c60; }
+.camera-photo { position: relative; margin: 0; display: grid; gap: 6px; }
+.camera-photo img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.camera-photo-badge { position: absolute; top: 8px; right: 8px; padding: 3px 8px; border-radius: 999px; background: #133f50e6; color: #fff; font-size: 12px; font-weight: 700; }
+.camera-photo figcaption { font-size: 12px; }
+.camera-empty .camera-photo figcaption a { display: inline; font-weight: 400; }
 .fallback-list { margin: 12px 0 0; padding-left: 18px; line-height: 2; }
 
 .site-footer { margin-top: 30px; color: #738990; font-size: 12px; line-height: 1.7; }

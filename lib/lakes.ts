@@ -10,10 +10,22 @@ export type StationId = (typeof OBSERVATION_STATIONS)[number]["id"];
 
 export type CameraCandidate = { videoId: string; label: string };
 
+// 쓰는 조건은 설계 문서 "결정과 근거"의 썸네일 행에 있다.
+export type ReferencePhoto = {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  takenOn: string;
+  credit: string;
+  sourceUrl: string;
+};
+
 export type CameraCard = {
   name: string;
   candidates: readonly CameraCandidate[];
   fallback: { label: string; url: string } | null;
+  photo?: ReferencePhoto;
 };
 
 export type Lake = CameraCard & {
@@ -64,6 +76,15 @@ export const LAKES: readonly Lake[] = [
     longitude: 138.685,
     candidates: [],
     fallback: { label: "ケーブルテレビ河口湖 西湖ライブカメラ", url: "https://www.kawaguchiko.ne.jp/disaster/chiku/saiko.html" },
+    photo: {
+      src: "/photos/saiko-2025-11.jpg",
+      width: 960,
+      height: 720,
+      alt: "가을 사이코 수면에 비친 후지산",
+      takenOn: "2025-11-12",
+      credit: "lumoplank · CC0",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:Saiko_-_Saiko6828.jpg",
+    },
     station: "49251",
   },
   {
