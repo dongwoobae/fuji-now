@@ -1,3 +1,4 @@
+import type { CameraCard } from "./lakes";
 import type { Camera, CameraPart, LakeWeather, Snapshot } from "./snapshot/schema";
 
 export const STALE_AFTER_MS = 20 * 60 * 1000;
@@ -43,9 +44,10 @@ export function currentHour(weather: LakeWeather, now: Date): LakeWeather["hourl
   return weather.hourly.find((hour) => Date.parse(hour.time) === hourStart) ?? null;
 }
 
-export type CameraState = { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; cameras: Camera[] };
+export type CameraState = { kind: "none" } | { kind: "unchecked" } | { kind: "offline" } | { kind: "live"; cameras: Camera[] };
 
-export function cameraStateOf(part: CameraPart | null): CameraState {
+export function cameraStateOf(card: Pick<CameraCard, "candidates">, part: CameraPart | null): CameraState {
+  if (card.candidates.length === 0) return { kind: "none" };
   if (part === null || part.cameraCheckedAt === null) return { kind: "unchecked" };
   return part.cameras.length > 0 ? { kind: "live", cameras: part.cameras } : { kind: "offline" };
 }

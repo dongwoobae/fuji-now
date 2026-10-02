@@ -63,7 +63,7 @@ export const LAKES: readonly Lake[] = [
     latitude: 35.499,
     longitude: 138.685,
     candidates: [],
-    fallback: { label: "西湖いやしの里根場 ライブカメラ", url: "https://www.town.fujikawaguchiko.lg.jp/ka/info.php?if_id=1649" },
+    fallback: { label: "ケーブルテレビ河口湖 西湖ライブカメラ", url: "https://www.kawaguchiko.ne.jp/disaster/chiku/saiko.html" },
     station: "49251",
   },
   {
