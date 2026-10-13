@@ -113,12 +113,13 @@ export const LAKES: readonly Lake[] = [
 export const SPOTS: CameraCard = {
   name: "명소",
   candidates: [
-    { videoId: "PlybojPy1r4", label: "아라쿠라야마 센겐 공원 · 주레이토" },
-    { videoId: "PxzwnWh1dKk", label: "오시노 핫카이" },
+    { videoId: "nl4UcsGSz-s", label: "아라쿠라야마 센겐 공원 · 주레이토" },
     { videoId: "_6nLps25Kws", label: "후지큐 FUJIYAMA 타워" },
     { videoId: "0KMeH_vh0Bk", label: "후지산역 옥상" },
     { videoId: "nh0TUmU-Sko", label: "오시노 닌자 마을" },
     { videoId: "0MLt9Jha2M8", label: "후지요시다 시내" },
+    // 맨 뒤에 둔 이유는 설계 문서 "카메라 후보"의 2026-10-13 항목에 있다.
+    { videoId: "PxzwnWh1dKk", label: "오시노 핫카이" },
   ],
   fallback: null,
 };
