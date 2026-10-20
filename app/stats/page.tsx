@@ -72,7 +72,7 @@ export default async function StatsPage() {
       <p><Link href="/">← 지금 화면으로</Link></p>
       <h1>월별로 보면, 후지산은 얼마나 보일까?</h1>
       <p className="subcopy">
-        &quot;보인 날&quot;은 그날 낮 시간 중 후지산을 알아볼 수 있는 시간(구름 걸림 이상)이 한 시간이라도 있었던 날입니다. 기상청 MSM
+        &quot;보인 날&quot;은 그날 낮 시간의 절반 이상 동안 후지산을 알아볼 수 있었던(구름 걸림 이상) 날입니다. 기상청 MSM
         운량으로 매긴 모델 추정이고, 같은 시간대에 사람이 직접 본 기록이 있으면 그 기록을 씁니다.
       </p>
 

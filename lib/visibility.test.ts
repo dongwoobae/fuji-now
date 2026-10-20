@@ -20,8 +20,20 @@ describe("estimateGrade", () => {
 
   it("uses the cloudiest of lake low, summit low and summit mid", () => {
     expect(estimateGrade(lake({ low: r.cloudyCover }), clearSky)).toBe("cloudy");
-    expect(estimateGrade(lake(), { ...clearSky, low: r.obscuredCover })).toBe("obscured");
-    expect(estimateGrade(lake(), { ...clearSky, mid: r.badCover })).toBe("bad");
+    expect(estimateGrade(lake(), { ...clearSky, low: 100 })).toBe("bad");
+    expect(estimateGrade(lake({ low: 15 }), { ...clearSky, mid: 80 })).toBe("obscured");
+  });
+
+  it("weighs summit cloud below lake cloud", () => {
+    expect(estimateGrade(lake({ low: 35 }), clearSky)).toBe("obscured");
+    expect(estimateGrade(lake(), { ...clearSky, low: 35 })).toBe("cloudy");
+    expect(estimateGrade(lake(), { ...clearSky, low: 70 })).toBe("obscured");
+    expect(estimateGrade(lake(), { ...clearSky, low: 75 })).toBe("bad");
+    expect(estimateGrade(lake(), { ...clearSky, mid: 40 })).toBe("cloudy");
+  });
+
+  it("never reaches bad from summit mid cloud alone", () => {
+    expect(estimateGrade(lake(), { ...clearSky, mid: 100 })).toBe("obscured");
   });
 
   it("ignores mid cloud over the lake, which sits above the line of sight", () => {
