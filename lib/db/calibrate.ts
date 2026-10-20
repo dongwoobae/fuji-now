@@ -5,7 +5,8 @@ import { GRADE_RULES } from "../visibility";
 import type { SqlExecutor } from "./stats";
 
 // 등급 기준을 고르기 위한 보정 계산. 원시 운량으로 "알아볼 수 있는 시각"(가림 < 기준, 호수 강수 < 0.5mm)을
-// 기준값마다 다시 판정하고, 하루 판정 규칙마다 월별 보인 날 수를 센다. 다섯 호수를 합친 값이다. 실측은 넣지 않는다.
+// 기준값마다 다시 판정하고, 하루 판정 규칙마다 월별 보인 날 수를 센다. 다섯 호수를 합친 값이다. 실측은 넣지 않는다(실측 대조는 report-agreement.ts).
+// 모든 기록을 SQL 안에서 세려고 가림 계산을 estimateGrade와 따로 쓴다. 공식을 바꾸면 여기도 같이 고친다.
 export const CALIBRATION_THRESHOLDS = [60, 50, 40, 30, 20, 10] as const;
 
 export const DAY_RULES = {
@@ -40,7 +41,11 @@ export async function queryCalibration(db: SqlExecutor): Promise<CalibrationRow[
       select
         w.point,
         w.time at time zone 'Asia/Tokyo' as local,
-        greatest(w.low_cloud_cover, s.low_cloud_cover, s.mid_cloud_cover) as cover,
+        greatest(
+          w.low_cloud_cover,
+          ${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover,
+          ${GRADE_RULES.summitMidWeight}::numeric * s.mid_cloud_cover
+        ) as cover,
         w.precipitation as precip
       from weather_hourly w
       join weather_hourly s on s.point = ${SUMMIT.id} and s.time = w.time
@@ -103,11 +108,11 @@ export function formatCalibration(lines: readonly CalibrationLine[]): string {
   const body = lines.map((line) => `${String(line.threshold).padStart(6)}  ${line.rule.padEnd(8)}${line.percents.map(cell).join("")}${cell(line.meanAbsDiff).padStart(7)}`);
   const legend = [
     "",
-    `${"cover<".padEnd(8)}: 가림 = max(호수 하층, 정상 하층, 정상 중층) 운량(%)이 이 값보다 작고 호수 강수 < 0.5mm면 알아볼 수 있는 시각`,
+    `${"cover<".padEnd(8)}: 가림 = max(호수 하층, ${GRADE_RULES.summitLowWeight}×정상 하층, ${GRADE_RULES.summitMidWeight}×정상 중층) 운량(%)이 이 값보다 작고 호수 강수 < ${GRADE_RULES.obscuredPrecipitation}mm면 알아볼 수 있는 시각`,
     ...(Object.entries(DAY_RULES) as [DayRule, string][]).map(([rule, text]) => `${rule.padEnd(8)}: 보인 날 = 알아볼 수 있는 시각이 ${text}`),
     `${"ref".padEnd(8)}: 북쪽(가와구치코) 참고 곡선(isfujivisible.com)`,
     `${"diff".padEnd(8)}: 참고와의 평균 절대 차이(%p). 차이가 작은 순으로 정렬`,
-    `지금 기준은 cover<${GRADE_RULES.obscuredCover} + any1이다`,
+    `지금 기준은 cover<${GRADE_RULES.obscuredCover} + half이다`,
   ];
   return [header, reference, ...body, ...legend].join("\n");
 }

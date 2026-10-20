@@ -8,7 +8,7 @@ export const STATS_MAX_AGE_MS = 23 * 60 * 60 * 1000;
 // 집계 작업이 멈추면 일주일 뒤 사라져 "준비 중"으로 돌아간다. 오래된 통계를 최신처럼 두지 않는다.
 export const STATS_TTL_SECONDS = 8 * 24 * 60 * 60;
 
-// "보인 날": 그날 낮 시각 중 후지산으로 알아볼 수 있는 등급(구름 걸림 이상)이 한 시간이라도 있는 날.
+// "보인 날": 그날 낮 시각의 절반 이상이 후지산으로 알아볼 수 있는 등급(구름 걸림 이상)인 날. 판정은 lib/db/stats.ts의 집계 SQL에 있다.
 export const VISIBLE_GRADES: readonly VisibilityGrade[] = ["perfect", "clear", "cloudy"];
 
 const count = z.coerce.number().int().nonnegative();

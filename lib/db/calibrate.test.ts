@@ -24,12 +24,13 @@ beforeAll(async () => {
   await migrate(db, { migrationsFolder: "drizzle" });
   const times = ["07:00", "12:00", "13:00", "14:00", "15:00", "21:00"];
   await db.insert(weatherHourly).values([
-    // 정상은 맑아서 가림은 호수 하층 운량이 정한다. 단 12시의 정상 중층은 아래에서 따로 넣는다.
-    ...times.filter((t) => t !== "12:00").map((t) => row("summit", t, 0)),
-    { ...row("summit", "12:00", 0), midCloudCover: 45 },
+    // 정상은 12시(중층 70)와 13시(하층 45)만 흐리고, 나머지 시각의 가림은 호수 하층 운량이 정한다.
+    ...times.filter((t) => t !== "12:00" && t !== "13:00").map((t) => row("summit", t, 0)),
+    { ...row("summit", "12:00", 0), midCloudCover: 70 },
+    row("summit", "13:00", 45),
     row("kawaguchiko", "07:00", 15),
     row("kawaguchiko", "12:00", 0),
-    row("kawaguchiko", "13:00", 45),
+    row("kawaguchiko", "13:00", 0),
     row("kawaguchiko", "14:00", 80),
     // 맑아도 비가 오면 알아볼 수 없는 시각이다
     row("kawaguchiko", "15:00", 0, 1),
@@ -39,12 +40,13 @@ beforeAll(async () => {
 });
 
 describe("queryCalibration", () => {
-  it("re-judges each daylight hour per threshold and counts days per rule", async () => {
+  it("re-judges each daylight hour per threshold with the summit weighted as in estimateGrade", async () => {
     const rows = await queryCalibration(db);
     const at = (threshold: number) => rows.find((r) => r.threshold === threshold && r.month === 8);
-    // 낮 5시간 중 가림: 07시 15, 12시 45(정상 중층), 13시 45, 14시 80, 15시 0(비)
+    // 낮 5시간 중 가림: 07시 15, 12시 35(정상 중층 70 × 0.5), 13시 36(정상 하층 45 × 0.8), 14시 80, 15시 0(비)
     expect(at(60)).toEqual({ threshold: 60, month: 8, days: 1, any1: 1, min3: 1, half: 1, morning: 1 });
-    expect(at(40)).toEqual({ threshold: 40, month: 8, days: 1, any1: 1, min3: 0, half: 0, morning: 1 });
+    expect(at(40)).toEqual({ threshold: 40, month: 8, days: 1, any1: 1, min3: 1, half: 1, morning: 1 });
+    expect(at(30)).toEqual({ threshold: 30, month: 8, days: 1, any1: 1, min3: 0, half: 0, morning: 1 });
     expect(at(10)).toEqual({ threshold: 10, month: 8, days: 1, any1: 0, min3: 0, half: 0, morning: 0 });
     expect(rows).toHaveLength(CALIBRATION_THRESHOLDS.length);
   });

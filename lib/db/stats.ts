@@ -34,7 +34,7 @@ export async function queryDayRows(db: SqlExecutor): Promise<DayRow[]> {
   const result = await db.execute(sql`
     with ${resolved},
     days as (
-      select lake, day, bool_or(grade in (${visibleList})) as visible, bool_or(human) as human
+      select lake, day, count(*) filter (where grade in (${visibleList})) * 2 >= count(*) as visible, bool_or(human) as human
       from resolved
       group by lake, day
     )

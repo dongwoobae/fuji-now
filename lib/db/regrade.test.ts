@@ -13,11 +13,11 @@ const layers = (low: number, mid = 0) => ({ lowCloudCover: low, midCloudCover: m
 
 beforeAll(async () => {
   await migrate(db, { migrationsFolder: "drizzle" });
-  // 일본 2018-08-01 10시와 11시. 옛 기준(가림<60이면 구름 걸림)으로 매겨 둔 등급이다.
+  // 일본 2018-08-01 10시와 11시. 기준을 바꾸기 전에 매겨 둔 등급이다.
   const ten = new Date("2018-08-01T10:00:00+09:00");
   const eleven = new Date("2018-08-01T11:00:00+09:00");
   await db.insert(weatherHourly).values([
-    { point: "summit", time: ten, ...layers(0, 40), grade: null, source: "backfill" },
+    { point: "summit", time: ten, ...layers(100), grade: null, source: "backfill" },
     { point: "kawaguchiko", time: ten, ...layers(5), grade: "cloudy", source: "backfill" },
     // 이미 새 기준과 같은 등급은 고치지 않는다
     { point: "saiko", time: ten, ...layers(90), grade: "bad", source: "backfill" },
@@ -28,9 +28,9 @@ beforeAll(async () => {
     { point: "kawaguchiko", time: new Date("2018-09-01T00:00:00+09:00"), ...layers(0), grade: "bad", source: "backfill" },
   ]);
   await db.insert(forecast).values([
-    { point: "summit", targetTime: ten, leadHours: 3, ...layers(0, 15), grade: null },
+    { point: "summit", targetTime: ten, leadHours: 3, ...layers(25), grade: null },
     { point: "kawaguchiko", targetTime: ten, leadHours: 3, ...layers(0), grade: "perfect" },
-    { point: "summit", targetTime: ten, leadHours: 24, ...layers(0, 70), grade: null },
+    { point: "summit", targetTime: ten, leadHours: 24, ...layers(100), grade: null },
     { point: "kawaguchiko", targetTime: ten, leadHours: 24, ...layers(0), grade: "perfect" },
   ]);
 });
@@ -48,8 +48,8 @@ describe("changedGrades", () => {
   });
 
   it("pairs each lake hour with the summit of the same time and returns only changed grades", () => {
-    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 0, mid: 40, high: 0 });
-    expect(changedGrades([row("summit", 0, null, 40), row("kawaguchiko", 5, "cloudy"), row("saiko", 90, "bad")])).toEqual([
+    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 100, mid: 0, high: 0 });
+    expect(changedGrades([row("summit", 100, null), row("kawaguchiko", 5, "cloudy"), row("saiko", 90, "bad")])).toEqual([
       { point: "kawaguchiko", time: "2018-08-01T01:00:00Z", lead: null, grade: expected },
     ]);
   });
@@ -62,7 +62,7 @@ describe("regrade against the database", () => {
     await writeGrades(db, "weather_hourly", changedGrades(rows));
     const after = await db.select().from(weatherHourly).orderBy(asc(weatherHourly.time), asc(weatherHourly.point));
     const grade = (point: string, jst: string) => after.find((r) => r.point === point && r.time.getTime() === Date.parse(jst))?.grade;
-    expect(grade("kawaguchiko", "2018-08-01T10:00:00+09:00")).toBe("obscured");
+    expect(grade("kawaguchiko", "2018-08-01T10:00:00+09:00")).toBe("bad");
     expect(grade("saiko", "2018-08-01T10:00:00+09:00")).toBe("bad");
     expect(grade("kawaguchiko", "2018-08-01T11:00:00+09:00")).toBeNull();
     expect(grade("summit", "2018-08-01T10:00:00+09:00")).toBeNull();

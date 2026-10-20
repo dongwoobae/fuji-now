@@ -33,10 +33,10 @@ pnpm test
 - `pnpm-workspace.yaml`은 공개된 지 7일이 안 된 패키지를 설치하지 않도록 설정되어 있다. 새 버전이 설치되지 않으면 이 설정 때문일 수 있다.
 - 바인딩을 바꾸면 `pnpm cf-typegen`으로 `worker-configuration.d.ts`를 다시 만든다.
 - Neon 연결 문자열은 `.env.local`의 `DATABASE_URL`에 둔다. 스키마를 고치면 `pnpm db:generate`로 `drizzle/`에 마이그레이션을 만들고, `pnpm db:migrate`로 적용한다. main에 병합하면 CI가 배포 직전에 적용한다.
-- 등급 기준값과 "보인 날" 규칙을 고를 때는 `pnpm calibrate`를 실행한다. 후보 조합마다 월별 보인 날 비율과 참고 곡선과의 차이를 표로 출력한다(DB를 바꾸지 않는다).
+- 등급 기준값과 "보인 날" 규칙을 고를 때는 `pnpm calibrate`를 실행한다. 후보 조합마다 월별 보인 날 비율과 참고 곡선과의 차이를 표로 출력하고, 지금 `GRADE_RULES`를 사람 실측과 대조한 표를 함께 낸다(DB를 바꾸지 않는다). 기준을 고친 뒤 배포 전에 다시 돌려 비교한다.
 - 등급 기준(`lib/visibility.ts`의 `GRADE_RULES`)을 바꿨으면 배포한 뒤 `pnpm regrade`로 DB의 과거 등급을 다시 매기고, `pnpm stats:refresh`로 통계를 다시 집계한다.
 - 통계를 바로 다시 집계하려면 `pnpm stats:refresh`를 실행한다. `.env.local`의 `DATABASE_URL`로 Neon에서 집계해 운영 KV에 바로 쓰고, 월별 "5호 전체" 보인 날 비율을 터미널에 출력한다. wrangler 로그인이 필요하다.
-- 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다.
+- 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다. 최근 며칠은 과거 예보 API가 500을 돌려줄 수 있어, 그러면 끝일을 앞당긴다.
 - 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
 - Open-Meteo 요청 형식을 바꾸면 `pnpm exec tsx scripts/capture-open-meteo-fixture.ts`로 테스트 데이터를 다시 받는다(`lib/__fixtures__/README.md`).
 - 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 기록·통계 작업은 `cron=1+*+*+*+*`로 부른다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.

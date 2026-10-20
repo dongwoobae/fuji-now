@@ -29,9 +29,13 @@ beforeAll(async () => {
     hour("kawaguchiko", "2025-08-01T10:00", "bad"),
     hour("kawaguchiko", "2025-08-01T11:00", "obscured"),
     hour("kawaguchiko", "2025-08-01T22:00", "perfect", false),
-    // 8월 2일: 한 시간만 구름 걸림 → 보인 날
+    // 8월 2일: 낮 두 시간 중 한 시간 구름 걸림(정확히 절반) → 보인 날
     hour("kawaguchiko", "2025-08-02T10:00", "bad"),
     hour("kawaguchiko", "2025-08-02T11:00", "cloudy"),
+    // 8월 5일: 낮 세 시간 중 한 시간만 구름 걸림(절반 미만) → 안 보인 날
+    hour("kawaguchiko", "2025-08-05T10:00", "cloudy"),
+    hour("kawaguchiko", "2025-08-05T11:00", "bad"),
+    hour("kawaguchiko", "2025-08-05T12:00", "bad"),
     // 8월 3일: 모델은 완벽이지만 같은 시간대 실측이 안 보임 → 실측이 이겨서 안 보인 날
     hour("kawaguchiko", "2025-08-03T09:00", "perfect"),
     // 일본 날짜로 8월 31일 23시대(UTC 14시)라도 9월이 아닌 8월로 센다. 낮이 아니라 빠진다.
@@ -52,15 +56,15 @@ beforeAll(async () => {
 });
 
 describe("stats queries", () => {
-  it("counts visible days by Japan month, letting a human report win its hour", async () => {
+  it("counts days visible for at least half their daylight hours by Japan month, letting a human report win its hour", async () => {
     const stats = buildStats(await queryDayRows(db), await queryHourRows(db), new Date("2026-10-01T00:00:00Z"));
     expect(cellOf(stats, "kawaguchiko", 8)).toEqual({
       lake: "kawaguchiko",
       month: 8,
-      days: 3,
+      days: 4,
       visibleDays: 1,
       humanDays: 1,
-      hours: { perfect: 0, clear: 0, cloudy: 1, obscured: 1, bad: 3 },
+      hours: { perfect: 0, clear: 0, cloudy: 2, obscured: 1, bad: 5 },
     });
     expect(cellOf(stats, "kawaguchiko", 9)).toMatchObject({ days: 1, visibleDays: 1, hours: { clear: 1 } });
     expect(cellOf(stats, "yamanakako", 8)).toMatchObject({ days: 1, visibleDays: 1 });
