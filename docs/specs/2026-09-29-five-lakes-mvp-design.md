@@ -223,7 +223,7 @@ spots { cameras[], candidates[], cameraCheckedAt | null }   // 명소 카드. �
 1. `readSnapshot()`으로 직전 스냅샷을 읽는다.
 2. 세 호출을 동시에 보낸다. 각각 10초가 지나면 끊는다.
    - YouTube `videos.list` 1회: 모든 후보 ID, `part=snippet,status,liveStreamingDetails`
-   - Open-Meteo 1회: 좌표 6개(호수 5 + 후지산 정상), `models=jma_msm`, `cell_selection=nearest`, `current`, `hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation`(`forecast_hours=9`), `daily=sunrise,sunset`, `wind_speed_unit=ms`, `timezone=Asia/Tokyo`. 정상은 등급 계산에만 쓰고 스냅샷에 따로 담지 않는다
+   - Open-Meteo 1회: 좌표 6개(호수 5 + 후지산 정상), `models=jma_msm`, `cell_selection=nearest`, `current`, `hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,relative_humidity_700hPa`(`forecast_hours=9`), `daily=sunrise,sunset`, `wind_speed_unit=ms`, `timezone=Asia/Tokyo`. 정상은 등급 계산에만 쓰고 스냅샷에 따로 담지 않는다
    - 기상청 AMeDAS: `latest_time.txt` 1회, 그 시각이 든 관측소 파일을 관측소마다 1회
 3. 세 응답을 zod로 검사한다. 형식이 다르면 그 호출은 실패로 처리한다.
    - Open-Meteo는 여러 지점 요청의 응답 순서를 문서로 보장하지 않는다. 그래서 응답의 각 지점 좌표가 같은 순서의 요청 좌표와 위도·경도 모두 0.03° 안에 있는지 확인한다. 벗어나면 기상 호출 실패로 처리한다.
