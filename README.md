@@ -36,7 +36,7 @@ pnpm test
 - 등급 기준값과 "보인 날" 규칙을 고를 때는 `pnpm calibrate`를 실행한다. 후보 조합마다 월별 보인 날 비율과 참고 곡선과의 차이를 표로 출력하고, 지금 `GRADE_RULES`를 사람 실측과 대조한 표를 함께 낸다(DB를 바꾸지 않는다). 기준을 고친 뒤 배포 전에 다시 돌려 비교한다.
 - 등급 기준(`lib/visibility.ts`의 `GRADE_RULES`)을 바꿨으면 배포한 뒤 `pnpm regrade`로 DB의 과거 등급을 다시 매기고, `pnpm stats:refresh`로 통계를 다시 집계한다.
 - 통계를 바로 다시 집계하려면 `pnpm stats:refresh`를 실행한다. `.env.local`의 `DATABASE_URL`로 Neon에서 집계해 운영 KV에 바로 쓰고, 월별 "5호 전체" 보인 날 비율을 터미널에 출력한다. wrangler 로그인이 필요하다.
-- 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 건너뛴다. 최근 며칠은 과거 예보 API가 500을 돌려줄 수 있어, 그러면 끝일을 앞당긴다.
+- 과거 MSM 값을 채우려면 `pnpm backfill`(기본 2018-08-01 ~ 어제)을 로컬에서 한 번 실행한다. `.env.local`의 `DATABASE_URL`을 쓴다. 끊기면 출력된 명령으로 이어서 실행한다. 이미 있는 시각은 비어 있는 700hPa 습도만 채우고 나머지는 그대로 둔다. 최근 며칠은 과거 예보 API가 500을 돌려줄 수 있어, 그러면 끝일을 앞당긴다.
 - 실측 페이지를 로컬에서 쓰려면 `.dev.vars`에 `REPORT_CODE`와 `DATABASE_URL`을 둔다. `pnpm start`(빌드 결과)는 `dist/server/.dev.vars`를 읽는다.
 - Open-Meteo 요청 형식을 바꾸면 `pnpm exec tsx scripts/capture-open-meteo-fixture.ts`로 테스트 데이터를 다시 받는다(`lib/__fixtures__/README.md`).
 - 로컬 KV는 처음에 비어 있어 "준비 중"이 보인다. 개발 서버를 띄운 뒤 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"`로 예약 작업을 한 번 돌리면 채워진다. 기록·통계 작업은 `cron=1+*+*+*+*`로 부른다. 빌드 결과(`pnpm start`)에서는 포트 8799로 같은 경로를 부른다.
@@ -92,7 +92,7 @@ pnpm run deploy            # `pnpm deploy`는 pnpm 내장 명령이라 다르게
 | `lib/record.ts` | 예보 응답을 기록 행으로 나누기 |
 | `lib/db/`, `drizzle/`, `drizzle.config.ts` | Neon 스키마·클라이언트·쿼리, 마이그레이션 |
 | `lib/report.ts`, `app/report/` | 실측 기록 페이지(운영자 전용)와 입력 검사·쿠키 확인 |
-| `lib/backfill.ts`, `scripts/backfill.ts` | 과거 예보로 `weather_hourly` 채우기 |
+| `lib/backfill.ts`, `lib/db/backfill.ts`, `scripts/backfill.ts` | 과거 예보로 `weather_hourly` 채우기 |
 | `lib/stats.ts`, `lib/db/stats.ts`, `worker/stats-job.ts`, `app/stats/` | 월별 통계 집계(하루 한 번)와 화면. 수동 집계는 `scripts/stats-refresh.ts` |
 | `scripts/` | 마이그레이션 적용, 백필, 통계 수동 집계, 등급 기준 보정표, 과거 등급 재계산, Open-Meteo 테스트 데이터 받기 |
 | `wrangler.jsonc` | 워커 이름·계정·진입점·KV·예약 작업·도메인 설정 |
