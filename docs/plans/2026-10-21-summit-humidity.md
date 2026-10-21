@@ -795,4 +795,4 @@ CI가 main 병합 때 `pnpm db:migrate`(0002) 뒤 배포한다. 아래는 운영
 - [ ] **Step 4: 통계 다시 집계** — `pnpm stats:refresh`.
 - [ ] **Step 5: 대조** — `pnpm calibrate`. 실측 대조표에서 10-21 11시가 들어갔는지 본다. 그 시각 행이 과거 예보 API에 아직 없어 습도가 비어 있으면 Step 6에서 채운다.
 - [ ] **Step 6: 배포일까지의 행 다시 채우기** — 배포일이 과거 예보 API에 들어온 뒤(며칠 걸릴 수 있다) `pnpm backfill <2026-10-21 또는 그 앞 날짜> <배포일>` → `pnpm regrade` → `pnpm stats:refresh`.
-- [ ] **Step 7: 운영 화면 확인** — 다음 5분 스냅샷 뒤 https://fujinow.dwoobae.com 에서 정상 700hPa가 건조한 시각의 등급이 "구름 걸림" 이하로 막히는지 본다. 습도를 직접 볼 화면은 없으므로 `wrangler tail`의 `"event":"record"` 로그나 Neon에서 `humidity_700hpa`가 채워지는지 확인한다.
+- [ ] **Step 7: 운영 화면 확인** — 다음 5분 스냅샷 뒤 https://fujinow.dwoobae.com 에서 정상 700hPa가 건조한 시각의 등급이 "구름 걸림" 이하로 막히는지 본다. 습도를 볼 화면과 로그는 없으므로 Neon에서 `select point, time, humidity_700hpa from weather_hourly order by time desc limit 12`로 새 행에 습도가 채워지는지 확인한다.

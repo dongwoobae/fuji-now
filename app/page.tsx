@@ -39,7 +39,7 @@ export default async function Home() {
         <details className="grade-legend">
           <summary>전망 5단계 보는 법</summary>
           <p>
-            호수와 후지산 정상 격자의 하층·중층 운량, 정상 높이의 습도, 호수의 강수 예보로 매긴 모델 추정입니다. 단계 이름은 후지산 웹캠 연구
+            호수와 후지산 정상 격자의 하층·중층 운량, 정상 격자 상공 약 3km의 습도, 호수의 강수 예보로 매긴 모델 추정입니다. 단계 이름은 후지산 웹캠 연구
             FujiView의 5단계를 따랐습니다.
           </p>
           <dl>
