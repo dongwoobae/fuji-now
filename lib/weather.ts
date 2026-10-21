@@ -147,7 +147,7 @@ export function gradeHours(forecasts: readonly PointForecast[]): Map<PointId, Gr
             ? null
             : estimateGrade(
                 { low: hour.lowCloudCover, mid: hour.midCloudCover, high: hour.highCloudCover, precipitation: hour.precipitation },
-                { low: top.lowCloudCover, mid: top.midCloudCover, high: top.highCloudCover },
+                { low: top.lowCloudCover, mid: top.midCloudCover, high: top.highCloudCover, humidity700: null },
               );
         return { ...hour, grade };
       }),

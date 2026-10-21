@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { SUMMIT } from "../lakes";
 import { VISIBLE_GRADES } from "../stats";
-import { estimateGrade, GRADE_RULES, VISIBILITY_GRADES, type CloudLayers, type VisibilityGrade } from "../visibility";
+import { estimateGrade, GRADE_RULES, VISIBILITY_GRADES, type CloudLayers, type SummitLayers, type VisibilityGrade } from "../visibility";
 import type { SqlExecutor } from "./stats";
 
 // 사람 실측과 지금 GRADE_RULES의 모델 추정을 대조한다. DB에 남은 등급이 아니라 원시 운량으로 다시 매기므로,
@@ -12,7 +12,7 @@ export type ReportPair = {
   hour: string;
   human: VisibilityGrade;
   lake: CloudLayers & { precipitation: number };
-  summit: CloudLayers;
+  summit: SummitLayers;
 };
 
 const pairRowSchema = z.object({
@@ -47,7 +47,7 @@ export async function queryReportPairs(db: SqlExecutor): Promise<ReportPair[]> {
       hour: r.hour,
       human: r.human,
       lake: { low: r.low, mid: r.mid, high: r.high, precipitation: r.precip },
-      summit: { low: r.summit_low, mid: r.summit_mid, high: r.summit_high },
+      summit: { low: r.summit_low, mid: r.summit_mid, high: r.summit_high, humidity700: null },
     };
   });
 }

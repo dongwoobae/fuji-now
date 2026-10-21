@@ -49,7 +49,7 @@ describe("queryReportPairs", () => {
         hour: "2026-10-08T06:00:00Z",
         human: "cloudy",
         lake: { low: 2, mid: 5, high: 0, precipitation: 0.1 },
-        summit: { low: 35, mid: 0, high: 4 },
+        summit: { low: 35, mid: 0, high: 4, humidity700: null },
       },
     ]);
   });
@@ -60,7 +60,7 @@ const pair = (hour: string, human: ReportPair["human"], lakeLow: number): Report
   hour,
   human,
   lake: { ...clearSky, low: lakeLow, precipitation: 0 },
-  summit: clearSky,
+  summit: { ...clearSky, humidity700: null },
 });
 
 describe("compareReports", () => {

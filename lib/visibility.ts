@@ -19,12 +19,17 @@ export const GRADE_DESCRIPTION: Record<VisibilityGrade, string> = {
 };
 
 export type CloudLayers = { low: number; mid: number; high: number };
+// 700hPa(약 3km) 상대습도(%). 값이 없는 시각은 null이고, 그때는 자르지 않는다.
+export type SummitLayers = CloudLayers & { humidity700: number | null };
 
-// 정상 가중치와 obscuredCover·clearCover는 2026-10-20 사람 실측과 대조해 정했다. 근거와 한계는 설계 문서의 "보정 (2026-10-20)".
+// 정상 가중치와 obscuredCover·clearCover는 2026-10-20 사람 실측과 대조해 정했다. summitDryHumidity는 2026-10-21에 정했다.
+// 근거와 한계는 설계 문서의 "보정 (2026-10-20)"과 "보정 (2026-10-21)".
 // pnpm calibrate가 지금 값으로 실측 대조표를 낸다. 기준을 바꾸면 pnpm regrade로 DB의 과거 등급을 다시 계산한다.
+// lib/db/calibrate.ts의 SQL이 가림 공식을 따로 쓰므로 공식을 바꾸면 거기도 고친다.
 export const GRADE_RULES = {
   summitLowWeight: 0.8,
   summitMidWeight: 0.5,
+  summitDryHumidity: 50,
   badCover: 60,
   badPrecipitation: 1,
   obscuredCover: 30,
@@ -36,10 +41,13 @@ export const GRADE_RULES = {
 
 // 정상은 3,776m라 하층(3km까지)과 중층(3~8km) 구름이 모두 가린다. 호수에서 정상까지의 시선은 호수 쪽에서 하층을, 정상 쪽에서 하층·중층을 지난다.
 // 정상 격자 값을 그대로 쓰면 실측보다 가림이 컸다. 그래서 줄여 넣고, 중층만으로는 "안 보임"에 닿지 않는다.
+// 700hPa가 건조하면 정상 하층 구름은 정상보다 낮은 사면에 깔린 것이라 호수에서 산을 다 가리지 못했다. 그때는 "구름 걸림"까지만 센다.
 // 상층 구름은 산을 가리지 않지만 하늘이 흐려 선명도가 떨어지므로 "완벽"만 막는다.
-export function estimateGrade(lake: CloudLayers & { precipitation: number }, summit: CloudLayers): VisibilityGrade {
+export function estimateGrade(lake: CloudLayers & { precipitation: number }, summit: SummitLayers): VisibilityGrade {
   const r = GRADE_RULES;
-  const cover = Math.max(lake.low, r.summitLowWeight * summit.low, r.summitMidWeight * summit.mid);
+  const summitLow = r.summitLowWeight * summit.low;
+  const dry = summit.humidity700 !== null && summit.humidity700 < r.summitDryHumidity;
+  const cover = Math.max(lake.low, dry ? Math.min(summitLow, r.cloudyCover) : summitLow, r.summitMidWeight * summit.mid);
   if (lake.precipitation >= r.badPrecipitation || cover >= r.badCover) return "bad";
   if (lake.precipitation >= r.obscuredPrecipitation || cover >= r.obscuredCover) return "obscured";
   if (cover >= r.cloudyCover) return "cloudy";

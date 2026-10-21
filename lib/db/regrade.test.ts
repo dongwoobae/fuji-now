@@ -48,7 +48,7 @@ describe("changedGrades", () => {
   });
 
   it("pairs each lake hour with the summit of the same time and returns only changed grades", () => {
-    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 100, mid: 0, high: 0 });
+    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 100, mid: 0, high: 0, humidity700: null });
     expect(changedGrades([row("summit", 100, null), row("kawaguchiko", 5, "cloudy"), row("saiko", 90, "bad")])).toEqual([
       { point: "kawaguchiko", time: "2018-08-01T01:00:00Z", lead: null, grade: expected },
     ]);

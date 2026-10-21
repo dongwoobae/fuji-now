@@ -55,7 +55,7 @@ describe("parseWeatherResponse", () => {
       result.byLake[lake.id].hourly.forEach((hour, h) => {
         const expected = estimateGrade(
           { low: hourly.cloud_cover_low[h], mid: hourly.cloud_cover_mid[h], high: hourly.cloud_cover_high[h], precipitation: hourly.precipitation[h] },
-          { low: summit.cloud_cover_low[h], mid: summit.cloud_cover_mid[h], high: summit.cloud_cover_high[h] },
+          { low: summit.cloud_cover_low[h], mid: summit.cloud_cover_mid[h], high: summit.cloud_cover_high[h], humidity700: null },
         );
         expect(hour.grade).toBe(expected);
       });

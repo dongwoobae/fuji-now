@@ -40,7 +40,7 @@ export function changedGrades(rows: readonly LayerRow[]): GradeChange[] {
     const grade = top
       ? estimateGrade(
           { low: row.low, mid: row.mid, high: row.high, precipitation: row.precip },
-          { low: top.low, mid: top.mid, high: top.high },
+          { low: top.low, mid: top.mid, high: top.high, humidity700: null },
         )
       : null;
     if (grade !== row.grade) changes.push({ point: row.point, time: row.time, lead: row.lead, grade });
