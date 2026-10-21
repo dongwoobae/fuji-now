@@ -24,7 +24,7 @@ const hour = (point: string, jst: string, low: number, overrides: Partial<Weathe
 beforeAll(async () => {
   await migrate(db, { migrationsFolder: "drizzle" });
   await db.insert(weatherHourly).values([
-    hour("summit", "2026-10-08T15:00", 35, { highCloudCover: 4 }),
+    hour("summit", "2026-10-08T15:00", 35, { highCloudCover: 4, humidity700: 36 }),
     hour("kawaguchiko", "2026-10-08T15:00", 2, { midCloudCover: 5, precipitation: 0.1 }),
     hour("summit", "2026-10-06T18:00", 31, { daylight: false }),
     hour("kawaguchiko", "2026-10-06T18:00", 39, { daylight: false }),
@@ -49,7 +49,7 @@ describe("queryReportPairs", () => {
         hour: "2026-10-08T06:00:00Z",
         human: "cloudy",
         lake: { low: 2, mid: 5, high: 0, precipitation: 0.1 },
-        summit: { low: 35, mid: 0, high: 4, humidity700: null },
+        summit: { low: 35, mid: 0, high: 4, humidity700: 36 },
       },
     ]);
   });

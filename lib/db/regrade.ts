@@ -4,7 +4,7 @@ import { SUMMIT } from "../lakes";
 import { estimateGrade, VISIBILITY_GRADES, type VisibilityGrade } from "../visibility";
 import type { SqlExecutor } from "./stats";
 
-// 등급 기준(GRADE_RULES)을 바꾼 뒤 DB에 남은 원시 운량으로 과거 등급을 다시 매긴다.
+// 등급 기준(GRADE_RULES)을 바꾼 뒤 DB에 남은 원시 운량과 정상 습도로 과거 등급을 다시 매긴다.
 // 공식을 SQL로 따로 쓰지 않고 estimateGrade를 그대로 써서 판정이 한 곳에만 있게 한다.
 
 export const REGRADE_TABLES = ["weather_hourly", "forecast"] as const;
@@ -24,6 +24,7 @@ const layerRowSchema = z.object({
   mid: z.coerce.number(),
   high: z.coerce.number(),
   precip: z.coerce.number(),
+  humidity: z.coerce.number().nullable(),
   grade: z.enum(VISIBILITY_GRADES).nullable(),
 });
 export type LayerRow = z.infer<typeof layerRowSchema>;
@@ -40,7 +41,7 @@ export function changedGrades(rows: readonly LayerRow[]): GradeChange[] {
     const grade = top
       ? estimateGrade(
           { low: row.low, mid: row.mid, high: row.high, precipitation: row.precip },
-          { low: top.low, mid: top.mid, high: top.high, humidity700: null },
+          { low: top.low, mid: top.mid, high: top.high, humidity700: top.humidity },
         )
       : null;
     if (grade !== row.grade) changes.push({ point: row.point, time: row.time, lead: row.lead, grade });
@@ -56,7 +57,7 @@ export async function readLayerRows(db: SqlExecutor, table: RegradeTable, start:
       point,
       to_char(${time} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as time,
       ${lead} as lead,
-      low_cloud_cover as low, mid_cloud_cover as mid, high_cloud_cover as high, precipitation as precip,
+      low_cloud_cover as low, mid_cloud_cover as mid, high_cloud_cover as high, precipitation as precip, humidity_700hpa as humidity,
       grade::text as grade
     from ${sql.identifier(table)}
     where ${time} >= (${start}::date)::timestamp at time zone 'Asia/Tokyo'
