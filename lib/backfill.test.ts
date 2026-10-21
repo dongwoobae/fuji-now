@@ -51,7 +51,7 @@ describe("buildHistoryUrl", () => {
     expect(url.hostname).toBe("historical-forecast-api.open-meteo.com");
     expect(url.searchParams.get("models")).toBe("jma_msm");
     expect(url.searchParams.get("cell_selection")).toBe("nearest");
-    expect(url.searchParams.get("hourly")).toBe("cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation");
+    expect(url.searchParams.get("hourly")).toBe("cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,relative_humidity_700hPa");
     expect(url.searchParams.get("daily")).toBe("sunrise,sunset");
     expect(url.searchParams.get("start_date")).toBe("2018-08-01");
     expect(url.searchParams.get("end_date")).toBe("2018-08-31");
