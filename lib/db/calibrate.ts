@@ -44,7 +44,7 @@ export async function queryCalibration(db: SqlExecutor): Promise<CalibrationRow[
         greatest(
           w.low_cloud_cover,
           case
-            when s.humidity_700hpa < ${GRADE_RULES.summitDryHumidity}
+            when s.humidity_700hpa < ${GRADE_RULES.summitDryHumidity}::numeric
               then least(${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover, ${GRADE_RULES.cloudyCover}::numeric)
             else ${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover
           end,
