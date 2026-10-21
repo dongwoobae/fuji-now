@@ -13,6 +13,8 @@ const layers = {
   midCloudCover: smallint("mid_cloud_cover").notNull(),
   highCloudCover: smallint("high_cloud_cover").notNull(),
   precipitation: real("precipitation").notNull(),
+  // 700hPa 상대습도(%). 값이 없는 시각은 null이다(설계 문서 "보정 (2026-10-21)").
+  humidity700: smallint("humidity_700hpa"),
   // 정상 지점은 등급이 없다.
   grade: gradeEnum("grade"),
   daylight: boolean("daylight").notNull(),

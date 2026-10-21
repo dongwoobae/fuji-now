@@ -36,6 +36,13 @@ describe("buildRecordRows", () => {
     }
   });
 
+  it("stores a missing 700hPa humidity as null", () => {
+    const patched = structuredClone(fixture) as unknown as Array<{ hourly: Record<string, Array<number | null>> }>;
+    patched[FORECAST_POINTS.length - 1].hourly.relative_humidity_700hPa[0] = null;
+    const summit = buildRecordRows(parseForecastPoints(patched, FORECAST_POINTS), NOW).actual.find((row) => row.point === SUMMIT.id);
+    expect(summit?.humidity700).toBeNull();
+  });
+
   it("stores raw layers with the grade, and no grade for the summit", () => {
     const lake = rows.actual.find((row) => row.point === "kawaguchiko");
     expect(lake).toMatchObject({
@@ -43,6 +50,7 @@ describe("buildRecordRows", () => {
       midCloudCover: fixture[1].hourly.cloud_cover_mid[0],
       highCloudCover: fixture[1].hourly.cloud_cover_high[0],
       precipitation: fixture[1].hourly.precipitation[0],
+      humidity700: fixture[1].hourly.relative_humidity_700hPa[0],
       fetchedAt: NOW,
     });
     expect(lake?.grade).not.toBeNull();

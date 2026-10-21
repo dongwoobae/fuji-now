@@ -23,6 +23,7 @@ function valuesOf(point: string, hour: GradedHour, fetchedAt: Date): HourValues 
     midCloudCover: Math.round(hour.midCloudCover),
     highCloudCover: Math.round(hour.highCloudCover),
     precipitation: hour.precipitation,
+    humidity700: hour.humidity700 === null ? null : Math.round(hour.humidity700),
     grade: hour.grade,
     daylight: hour.daylight,
     fetchedAt,

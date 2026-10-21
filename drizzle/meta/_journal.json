@@ -15,6 +15,13 @@
       "when": 1790837445098,
       "tag": "0001_weather_source",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792556794507,
+      "tag": "0002_summit_humidity",
+      "breakpoints": true
     }
   ]
 }
