@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { beforeAll, describe, expect, it } from "vitest";
 import { calibrationLines, CALIBRATION_THRESHOLDS, formatCalibration, queryCalibration, REFERENCE_NORTH, type CalibrationRow } from "./calibrate";
+import { GRADE_RULES } from "../visibility";
 import { weatherHourly, type WeatherHourlyRow } from "./schema";
 
 const db = drizzle(new PGlite());
@@ -36,6 +37,11 @@ beforeAll(async () => {
     row("kawaguchiko", "15:00", 0, 1),
     // 밤은 세지 않는다
     row("kawaguchiko", "21:00", 0, 0, false),
+    // 9월 1일: 정상 하층 77은 같고, 10시는 700hPa가 건조해서 10에서 잘리고 11시는 경계값이라 61.6 그대로다
+    { ...row("summit", "10:00", 77), time: new Date("2025-09-01T10:00:00+09:00"), humidity700: GRADE_RULES.summitDryHumidity - 14 },
+    { ...row("summit", "11:00", 77), time: new Date("2025-09-01T11:00:00+09:00"), humidity700: GRADE_RULES.summitDryHumidity },
+    { ...row("kawaguchiko", "10:00", 0), time: new Date("2025-09-01T10:00:00+09:00") },
+    { ...row("kawaguchiko", "11:00", 0), time: new Date("2025-09-01T11:00:00+09:00") },
   ]);
 });
 
@@ -48,7 +54,15 @@ describe("queryCalibration", () => {
     expect(at(40)).toEqual({ threshold: 40, month: 8, days: 1, any1: 1, min3: 1, half: 1, morning: 1 });
     expect(at(30)).toEqual({ threshold: 30, month: 8, days: 1, any1: 1, min3: 0, half: 0, morning: 1 });
     expect(at(10)).toEqual({ threshold: 10, month: 8, days: 1, any1: 0, min3: 0, half: 0, morning: 0 });
-    expect(rows).toHaveLength(CALIBRATION_THRESHOLDS.length);
+    expect(rows).toHaveLength(CALIBRATION_THRESHOLDS.length * 2);
+  });
+
+  it("caps the summit low cloud at the cloudy line when the summit level is dry", async () => {
+    const rows = await queryCalibration(db);
+    const at = (threshold: number) => rows.find((r) => r.threshold === threshold && r.month === 9);
+    // 낮 2시간 중 가림: 10시 10(잘림), 11시 61.6
+    expect(at(60)).toEqual({ threshold: 60, month: 9, days: 1, any1: 1, min3: 0, half: 1, morning: 0 });
+    expect(at(10)).toEqual({ threshold: 10, month: 9, days: 1, any1: 0, min3: 0, half: 0, morning: 0 });
   });
 });
 

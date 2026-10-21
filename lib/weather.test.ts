@@ -21,7 +21,7 @@ describe("buildWeatherUrl", () => {
     expect(url.searchParams.get("wind_speed_unit")).toBe("ms");
     expect(url.searchParams.get("timezone")).toBe("Asia/Tokyo");
     expect(url.searchParams.get("daily")).toBe("sunrise,sunset");
-    expect(url.searchParams.get("hourly")).toBe("cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation");
+    expect(url.searchParams.get("hourly")).toBe("cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,relative_humidity_700hPa");
     expect(url.searchParams.get("forecast_hours")).toBe("9");
     expect(buildWeatherUrl(FORECAST_POINTS, 73).searchParams.get("forecast_hours")).toBe("73");
   });
@@ -55,7 +55,7 @@ describe("parseWeatherResponse", () => {
       result.byLake[lake.id].hourly.forEach((hour, h) => {
         const expected = estimateGrade(
           { low: hourly.cloud_cover_low[h], mid: hourly.cloud_cover_mid[h], high: hourly.cloud_cover_high[h], precipitation: hourly.precipitation[h] },
-          { low: summit.cloud_cover_low[h], mid: summit.cloud_cover_mid[h], high: summit.cloud_cover_high[h] },
+          { low: summit.cloud_cover_low[h], mid: summit.cloud_cover_mid[h], high: summit.cloud_cover_high[h], humidity700: summit.relative_humidity_700hPa[h] },
         );
         expect(hour.grade).toBe(expected);
       });
@@ -84,6 +84,45 @@ describe("parseWeatherResponse", () => {
     const third = toJstIso(fixture[0].hourly.time[2]);
     expect(graded.get("yamanakako")?.find((hour) => hour.time === third)?.grade).toBeNull();
     expect(graded.get(SUMMIT.id)?.every((hour) => hour.grade === null)).toBe(true);
+  });
+
+  it("keeps hours whose 700hPa humidity is missing", () => {
+    const patched = structuredClone(fixture) as unknown as Array<{ hourly: Record<string, Array<number | null>> }>;
+    patched[FORECAST_POINTS.length - 1].hourly.relative_humidity_700hPa[0] = null;
+    const summit = parseForecastPoints(patched, FORECAST_POINTS).find((forecast) => forecast.id === SUMMIT.id);
+    expect(summit?.hourly).toHaveLength(fixture[0].hourly.time.length);
+    expect(summit?.hourly[0].humidity700).toBeNull();
+  });
+
+  it("treats a response without the humidity series as missing humidity", () => {
+    const patched = structuredClone(fixture) as unknown as Array<{ hourly: Record<string, unknown> }>;
+    for (const location of patched) delete location.hourly.relative_humidity_700hPa;
+    const forecasts = parseForecastPoints(patched, FORECAST_POINTS);
+    expect(forecasts[0].hourly).toHaveLength(fixture[0].hourly.time.length);
+    expect(forecasts.every((forecast) => forecast.hourly.every((hour) => hour.humidity700 === null))).toBe(true);
+  });
+
+  it("fails when the humidity series has a different length", () => {
+    const patched = structuredClone(fixture) as unknown as Array<{ hourly: Record<string, Array<number | null>> }>;
+    patched[0].hourly.relative_humidity_700hPa.pop();
+    expect(() => parseForecastPoints(patched, FORECAST_POINTS)).toThrow(/differ in length/);
+  });
+
+  it("grades with the summit 700hPa humidity of the same hour", () => {
+    const patched = structuredClone(fixture) as unknown as Array<{ hourly: Record<string, Array<number | null>> }>;
+    const lake = patched[0].hourly;
+    const summit = patched[FORECAST_POINTS.length - 1].hourly;
+    for (const h of [0, 1]) {
+      for (const key of ["cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", "precipitation"]) lake[key][h] = 0;
+      summit.cloud_cover_low[h] = 77;
+      summit.cloud_cover_mid[h] = 0;
+      summit.cloud_cover_high[h] = 0;
+    }
+    summit.relative_humidity_700hPa[0] = 36;
+    summit.relative_humidity_700hPa[1] = 60;
+    const graded = gradeHours(parseForecastPoints(patched, FORECAST_POINTS)).get("yamanakako");
+    expect(graded?.[0].grade).toBe("cloudy");
+    expect(graded?.[1].grade).toBe("bad");
   });
 
   it("takes today's sunrise and sunset from the reference lake", () => {

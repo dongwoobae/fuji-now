@@ -30,6 +30,8 @@ const locationSchema = z.object({
     cloud_cover_mid: hourlyValues,
     cloud_cover_high: hourlyValues,
     precipitation: hourlyValues,
+    // 이 배열이 빠진 응답도 받는다. 습도가 없으면 정상 하층을 자르지 않을 뿐 등급은 매길 수 있다.
+    relative_humidity_700hPa: hourlyValues.optional(),
   }),
   daily: z.object({
     time: z.array(z.string()),
@@ -47,6 +49,7 @@ export type PointHour = {
   midCloudCover: number;
   highCloudCover: number;
   precipitation: number;
+  humidity700: number | null;
   daylight: boolean;
 };
 
@@ -68,7 +71,7 @@ function msmUrl(base: string, points: readonly ForecastPoint[]): URL {
   url.searchParams.set("models", "jma_msm");
   // 기본값(land)은 표고가 비슷한 육지 격자를 골라 최근접이 아닐 수 있다. 좌표 대조가 최근접 격자를 전제로 한다.
   url.searchParams.set("cell_selection", "nearest");
-  url.searchParams.set("hourly", "cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation");
+  url.searchParams.set("hourly", "cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,relative_humidity_700hPa");
   url.searchParams.set("daily", "sunrise,sunset");
   url.searchParams.set("timezone", "Asia/Tokyo");
   return url;
@@ -111,8 +114,9 @@ export function parseForecastPoints(json: unknown, points: readonly ForecastPoin
     ) {
       throw new Error(`Open-Meteo location ${i} does not match ${point.id}`);
     }
-    const { time, cloud_cover_low: low, cloud_cover_mid: mid, cloud_cover_high: high, precipitation } = location.hourly;
-    if ([low, mid, high, precipitation].some((values) => values.length !== time.length)) {
+    const { time, cloud_cover_low: low, cloud_cover_mid: mid, cloud_cover_high: high, precipitation, relative_humidity_700hPa: humidity } =
+      location.hourly;
+    if ([low, mid, high, precipitation, ...(humidity ? [humidity] : [])].some((values) => values.length !== time.length)) {
       throw new Error(`Open-Meteo hourly arrays differ in length for ${point.id}`);
     }
     const hourly: PointHour[] = [];
@@ -125,6 +129,7 @@ export function parseForecastPoints(json: unknown, points: readonly ForecastPoin
         midCloudCover: m,
         highCloudCover: hi,
         precipitation: p,
+        humidity700: humidity?.[h] ?? null,
         daylight: daylightOf(hour, location.daily),
       });
     });
@@ -147,7 +152,7 @@ export function gradeHours(forecasts: readonly PointForecast[]): Map<PointId, Gr
             ? null
             : estimateGrade(
                 { low: hour.lowCloudCover, mid: hour.midCloudCover, high: hour.highCloudCover, precipitation: hour.precipitation },
-                { low: top.lowCloudCover, mid: top.midCloudCover, high: top.highCloudCover },
+                { low: top.lowCloudCover, mid: top.midCloudCover, high: top.highCloudCover, humidity700: top.humidity700 },
               );
         return { ...hour, grade };
       }),

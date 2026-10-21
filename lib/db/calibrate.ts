@@ -43,7 +43,11 @@ export async function queryCalibration(db: SqlExecutor): Promise<CalibrationRow[
         w.time at time zone 'Asia/Tokyo' as local,
         greatest(
           w.low_cloud_cover,
-          ${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover,
+          case
+            when s.humidity_700hpa < ${GRADE_RULES.summitDryHumidity}::numeric
+              then least(${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover, ${GRADE_RULES.cloudyCover}::numeric)
+            else ${GRADE_RULES.summitLowWeight}::numeric * s.low_cloud_cover
+          end,
           ${GRADE_RULES.summitMidWeight}::numeric * s.mid_cloud_cover
         ) as cover,
         w.precipitation as precip
@@ -108,7 +112,7 @@ export function formatCalibration(lines: readonly CalibrationLine[]): string {
   const body = lines.map((line) => `${String(line.threshold).padStart(6)}  ${line.rule.padEnd(8)}${line.percents.map(cell).join("")}${cell(line.meanAbsDiff).padStart(7)}`);
   const legend = [
     "",
-    `${"cover<".padEnd(8)}: 가림 = max(호수 하층, ${GRADE_RULES.summitLowWeight}×정상 하층, ${GRADE_RULES.summitMidWeight}×정상 중층) 운량(%)이 이 값보다 작고 호수 강수 < ${GRADE_RULES.obscuredPrecipitation}mm면 알아볼 수 있는 시각`,
+    `${"cover<".padEnd(8)}: 가림 = max(호수 하층, ${GRADE_RULES.summitLowWeight}×정상 하층(700hPa 습도 < ${GRADE_RULES.summitDryHumidity}이면 최대 ${GRADE_RULES.cloudyCover}), ${GRADE_RULES.summitMidWeight}×정상 중층) 운량(%)이 이 값보다 작고 호수 강수 < ${GRADE_RULES.obscuredPrecipitation}mm면 알아볼 수 있는 시각`,
     ...(Object.entries(DAY_RULES) as [DayRule, string][]).map(([rule, text]) => `${rule.padEnd(8)}: 보인 날 = 알아볼 수 있는 시각이 ${text}`),
     `${"ref".padEnd(8)}: 북쪽(가와구치코) 참고 곡선(isfujivisible.com)`,
     `${"diff".padEnd(8)}: 참고와의 평균 절대 차이(%p). 차이가 작은 순으로 정렬`,

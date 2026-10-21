@@ -44,14 +44,24 @@ describe("changedGrades", () => {
     mid,
     high: 0,
     precip: 0,
+    humidity: null,
     grade,
   });
 
   it("pairs each lake hour with the summit of the same time and returns only changed grades", () => {
-    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 100, mid: 0, high: 0 });
+    const expected = estimateGrade({ low: 5, mid: 0, high: 0, precipitation: 0 }, { low: 100, mid: 0, high: 0, humidity700: null });
     expect(changedGrades([row("summit", 100, null), row("kawaguchiko", 5, "cloudy"), row("saiko", 90, "bad")])).toEqual([
       { point: "kawaguchiko", time: "2018-08-01T01:00:00Z", lead: null, grade: expected },
     ]);
+  });
+
+  it("caps the summit low cloud when the summit row is dry", () => {
+    const withHumidity = (base: LayerRow, humidity: number | null): LayerRow => ({ ...base, humidity });
+    expect(changedGrades([withHumidity(row("summit", 77, null), 36), row("kawaguchiko", 11, "bad")])).toEqual([
+      { point: "kawaguchiko", time: "2018-08-01T01:00:00Z", lead: null, grade: "cloudy" },
+    ]);
+    // 습도는 정상 행의 것을 본다
+    expect(changedGrades([row("summit", 77, null), withHumidity(row("kawaguchiko", 11, "bad"), 36)])).toEqual([]);
   });
 });
 
@@ -77,6 +87,17 @@ describe("regrade against the database", () => {
     const lake = (lead: number) => after.find((r) => r.point === "kawaguchiko" && r.leadHours === lead)?.grade;
     expect(lake(3)).toBe("cloudy");
     expect(lake(24)).toBe("bad");
+  });
+
+  it("reads the summit 700hPa humidity and regrades with it", async () => {
+    const at = new Date("2018-08-15T10:00:00+09:00");
+    await db.insert(weatherHourly).values([
+      { point: "summit", time: at, ...layers(77), humidity700: 36, grade: null, source: "backfill" },
+      { point: "kawaguchiko", time: at, ...layers(11), grade: "bad", source: "backfill" },
+    ]);
+    const rows = await readLayerRows(db, "weather_hourly", "2018-08-15", "2018-08-15");
+    expect(rows.find((r) => r.point === "summit")?.humidity).toBe(36);
+    expect(changedGrades(rows)).toEqual([{ point: "kawaguchiko", time: "2018-08-15T01:00:00Z", lead: null, grade: "cloudy" }]);
   });
 
   it("reports the Japan-date span of a table", async () => {
